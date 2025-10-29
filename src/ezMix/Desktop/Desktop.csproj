@@ -1,0 +1,75 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+
+	<Authors>Lê Phúc Nhã Thịnh</Authors>
+	<Company>LPNT</Company>
+	<PackageId>ezMix</PackageId>
+	<Version>1.0.0</Version>
+	<Description>ezMix - Phần mềm trộn đề</Description>
+	<RepositoryUrl>https://github.com/nhathinh2703/ezMix</RepositoryUrl>
+	<PackageTags>tron-de;mix-exam;exam-tool;education;kiem-tra;ezmix</PackageTags>
+	<AppName>ezMix</AppName>
+	<GitHubUser>nhathinh2703</GitHubUser>
+	<GitHubRepo>ezMix</GitHubRepo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\Templates\HuongDanGiai.docx" />
+    <None Remove="Assets\Templates\TieuDe.docx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <COMReference Include="Microsoft.Office.Core">
+      <WrapperTool>tlbimp</WrapperTool>
+      <VersionMinor>8</VersionMinor>
+      <VersionMajor>2</VersionMajor>
+      <Guid>2df8d04c-5bfa-101b-bde5-00aa0044de52</Guid>
+      <Lcid>0</Lcid>
+      <Isolated>false</Isolated>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="Microsoft.Office.Interop.Word">
+      <WrapperTool>tlbimp</WrapperTool>
+      <VersionMinor>7</VersionMinor>
+      <VersionMajor>8</VersionMajor>
+      <Guid>00020905-0000-0000-c000-000000000046</Guid>
+      <Lcid>0</Lcid>
+      <Isolated>false</Isolated>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Templates\HuongDanGiai.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Templates\TieuDe.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.3.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.10" />
+    <PackageReference Include="Octokit" Version="14.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MathType\MathType.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="ezUpdater.Core">
+      <HintPath>..\..\..\..\ezUpdater\src\ezUpdater\ezUpdater.Core\bin\Debug\net8.0\ezUpdater.Core.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

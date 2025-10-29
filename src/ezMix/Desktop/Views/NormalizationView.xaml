@@ -1,0 +1,257 @@
+﻿<UserControl x:Class="Desktop.Views.NormalizationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:Desktop.Views"
+             mc:Ignorable="d"
+             d:DesignHeight="900" d:DesignWidth="1000">
+
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Cột trái: chuẩn hóa + trộn đề -->
+        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Tiêu đề -->
+                <TextBlock Text="🛠️ 1. Chuẩn hóa đề kiểm tra"
+           FontSize="20" FontWeight="Bold" Foreground="#FF9933" Margin="5"/>
+
+                <!-- Tùy chọn xử lý -->
+                <GroupBox Header="Tùy chọn xử lý"
+          Margin="10"
+          Padding="10"
+          BorderBrush="{StaticResource AppPrimaryColor}"
+          FontFamily="{StaticResource AppFontFamily}"
+          FontSize="{StaticResource AppFontSize}">
+                    <WrapPanel ItemWidth="180" ItemHeight="30">
+                        <CheckBox Content="Căn giữa hình ảnh" IsChecked="{Binding IsCenterImage}" Margin="5"/>
+                        <CheckBox Content="Tạo viền hình ảnh" IsChecked="{Binding IsBorderImage}" Margin="5"/>
+                    </WrapPanel>
+                </GroupBox>
+
+                <!-- Tệp và xử lý -->
+                <GroupBox Header="📁 Tệp và xử lý"
+          Margin="10"
+          Padding="10"
+          BorderBrush="{StaticResource AppPrimaryColor}"
+          FontFamily="{StaticResource AppFontFamily}"
+          FontSize="{StaticResource AppFontSize}">
+                    <StackPanel>
+
+                        <Grid Margin="5" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+               Text="📄 Tệp gốc"
+               FontSize="{StaticResource AppFontSize}"
+               VerticalAlignment="Center"
+               Margin="0,0,5,0"/>
+
+                            <TextBox Grid.Column="1"
+             Text="{Binding SourceFile}"
+             IsReadOnly="True"
+             MinHeight="30"
+             Background="Transparent"
+             BorderThickness="1"
+             Foreground="DarkSlateGray"
+             VerticalAlignment="Center"
+             HorizontalAlignment="Stretch"/>
+                        </Grid>
+
+                        <Grid Margin="5" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+               Text="📄 Tệp chuẩn hóa"
+               FontSize="{StaticResource AppFontSize}"
+               VerticalAlignment="Center"
+               Margin="0,0,5,0"/>
+
+                            <TextBox Grid.Column="1"
+             Text="{Binding DestinationFile}"
+             IsReadOnly="True"
+             MinHeight="30"
+             Background="Transparent"
+             BorderThickness="1"
+             Foreground="DarkSlateGray"
+             VerticalAlignment="Center"
+             HorizontalAlignment="Stretch"/>
+                        </Grid>
+
+                        <!-- Loại chuẩn hóa + nút -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+                            <TextBlock Text="⚙️"
+                       ToolTip="Loại chuẩn hóa"
+                       FontSize="16"
+                       VerticalAlignment="Center"
+                       Margin="0,0,5,0"/>
+                            <ComboBox ItemsSource="{Binding ExamTypes}"
+                      SelectedItem="{Binding SelectedExamType}"
+                      Width="100"
+                      Margin="0,0,10,0"/>
+
+                            <Button Content="📂 Chuẩn hóa..."
+                    Command="{Binding AnalyzeFileCommand}"
+                    Width="auto"
+                    Margin="5,0"
+                    Background="{StaticResource AppPrimaryColor}"
+                    Foreground="White"/>
+
+                            <Button Content="📂 Chỉ nhận dạng..."
+                    Command="{Binding RecognitionFileCommand}"
+                    Width="auto"
+                    Margin="5,0"
+                    Background="{StaticResource AppPrimaryColor}"
+                    Foreground="White"/>
+                        </StackPanel>
+
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Tiêu đề -->
+                <TextBlock Text="🔀 2. Trộn đề kiểm tra"
+           FontSize="20" FontWeight="Bold" Foreground="#FF9933" Margin="5"/>
+
+                <GroupBox Header="🎯 Trộn đề kiểm tra"
+          Margin="10"
+          Padding="10"
+          BorderBrush="{StaticResource AppPrimaryColor}"
+          FontFamily="{StaticResource AppFontFamily}"
+          FontSize="{StaticResource AppFontSize}">
+                    <StackPanel>
+
+                        <Grid Margin="5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="30"/>
+                                <!-- Icon -->
+                                <ColumnDefinition Width="*" />
+                                <!-- Input -->
+                                <ColumnDefinition Width="30"/>
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Dòng 1 -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="🏢" ToolTip="Đơn vị cấp trên" VerticalAlignment="Center" FontSize="16" Margin="5"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding MixInfo.SuperiorUnit}" Margin="5" MinHeight="30"/>
+
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="📅" ToolTip="Năm học" VerticalAlignment="Center" FontSize="16" Margin="5"/>
+                            <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding MixInfo.SchoolYear}" Margin="5" MinHeight="30"/>
+
+                            <!-- Dòng 2 -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="🏫" ToolTip="Đơn vị" VerticalAlignment="Center" FontSize="16" Margin="5"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MixInfo.Unit}" Margin="5" MinHeight="30"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="📘" ToolTip="Môn học" VerticalAlignment="Center" FontSize="16" Margin="5"/>
+                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding MixInfo.Subject}" Margin="5" MinHeight="30"/>
+
+                            <!-- Dòng 3 -->
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="🧪" ToolTip="Kỳ kiểm tra" VerticalAlignment="Center" FontSize="16" Margin="5"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding MixInfo.TestPeriod}" Margin="5" MinHeight="30"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="⏱️" ToolTip="Thời gian làm bài" VerticalAlignment="Center" FontSize="16" Margin="5"/>
+                            <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding MixInfo.Time}" Margin="5" MinHeight="30"/>
+
+                            <!-- Dòng 4 -->
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="🔢" ToolTip="Số đề cần trộn" VerticalAlignment="Center" FontSize="16" Margin="5"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding MixInfo.NumberOfVersions}" Margin="5" MinHeight="30"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="2" Text="🆔" ToolTip="Mã đề bắt đầu" VerticalAlignment="Center" FontSize="16" Margin="5"/>
+                            <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding MixInfo.StartCode}" Margin="5" MinHeight="30"/>
+
+                            <!-- Dòng 5 -->
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="📄" ToolTip="Danh sách mã đề" VerticalAlignment="Top" FontSize="16" Margin="5"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding ExamCodes}" Margin="5" AcceptsReturn="True" Height="60"/>
+                        </Grid>
+
+                        <!-- Các nút chức năng -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10,10,0,0">
+                            <Button Content="💾 Lưu thông tin"
+                    Command="{Binding SaveMixInfoCommand}"
+                    Margin="5"
+                    Width="120"
+                    Background="{StaticResource AppPrimaryColor}"
+                    Foreground="White"/>
+
+                            <Button Content="🔢 Tạo mã đề theo thứ tự"
+                    Command="{Binding GenerateSequentialExamCodesCommand}"
+                    Margin="5"
+                    Width="160"
+                    Background="{StaticResource AppPrimaryColor}"
+                    Foreground="White"/>
+
+                            <Button Content="🎲 Tạo mã đề ngẫu nhiên"
+                    Command="{Binding GenerateRandomExamCodesCommand}"
+                    Margin="5"
+                    Width="160"
+                    Background="{StaticResource AppPrimaryColor}"
+                    Foreground="White"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10,10,0,0">
+                            <Button Content="🚀 Trộn đề"
+                    Command="{Binding MixCommand}"
+                    IsEnabled="{Binding IsEnableMix}"
+                    Margin="5"
+                    Width="100"
+                    Background="{StaticResource AppPrimaryColor}"
+                    Foreground="White"/>
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Cột phải: bảng câu hỏi -->
+        <DataGrid Grid.Column="1"
+          Margin="5"
+          ItemsSource="{Binding Questions}"
+          AutoGenerateColumns="False"
+          CanUserAddRows="False"
+          HeadersVisibility="Column"
+          IsReadOnly="True"
+          AlternatingRowBackground="{StaticResource AppSecondaryColor}"
+          FontFamily="{StaticResource AppFontFamily}"
+          FontSize="{StaticResource AppFontSize}"
+          RowHeaderWidth="0"
+          BorderBrush="{StaticResource AppPrimaryColor}"
+          BorderThickness="1">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Loại câu hỏi"
+                            Binding="{Binding QuestionType, Converter={StaticResource QuestionTypeConverter}}"
+                            Width="120"/>
+                <DataGridTextColumn Header="Mức độ"
+                            Binding="{Binding Level, Converter={StaticResource LevelConverter}}"
+                            Width="80"/>
+                <DataGridTextColumn Header="Câu"
+                            Binding="{Binding Code}"
+                            Width="50"/>
+                <DataGridTextColumn Header="Số đáp án"
+                            Binding="{Binding CountAnswer}"
+                            Width="80"/>
+                <DataGridTextColumn Header="Đáp án đúng"
+                            Binding="{Binding CorrectAnswer}"
+                            Width="*"/>
+                <DataGridTextColumn Header="Ghi chú"
+                            Binding="{Binding Description}"
+                            Width="auto"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>
