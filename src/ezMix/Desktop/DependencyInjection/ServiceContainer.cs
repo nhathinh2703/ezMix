@@ -3,6 +3,7 @@ using Desktop.Services.Interfaces;
 using Desktop.ViewModels;
 using Desktop.Views;
 using Microsoft.Extensions.DependencyInjection;
+using Updater.Services;
 
 namespace Desktop.DependencyInjection
 {
@@ -15,7 +16,10 @@ namespace Desktop.DependencyInjection
             services.AddTransient<IExcelAnswerExporter, ExcelAnswerExporter>();
             services.AddTransient<IOpenXMLService, OpenXMLService>();
             services.AddTransient<IInteropWordService, InteropWordService>();
-            services.AddTransient<IVersionChecker, VersionChecker>();
+
+            services.AddHttpClient();
+            services.AddScoped<IVersionChecker, VersionChecker>();
+            services.AddScoped<IUpdateService, UpdateService>();
 
             // Đăng ký Views
             services.AddSingleton<HomeView>();

@@ -1,10 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using ezUpdater.Core.Models;
-using Octokit;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
+using Updater.Models;
 
 namespace Desktop.ViewModels
 {

@@ -2,7 +2,7 @@
 
 # === Cấu hình mặc định ===
 $projectDir  = "$PSScriptRoot\..\src\ezMix\Desktop"
-$outputDir   = "$PSScriptRoot\..\BuildOutput"
+$outputDir   = "$PSScriptRoot\..\output"
 $framework   = "net8.0-windows"
 $publishDir  = "$projectDir\bin\Release\$framework\publish"
 
@@ -30,7 +30,7 @@ if (-not $appName -or -not $appVersion) {
 $zipName     = "$appName-v$appVersion.zip"
 $zipPath     = Join-Path $outputDir $zipName
 $zipUrl      = "https://github.com/$gitUser/$gitRepo/releases/download/v$appVersion/$zipName"
-$versionUrl  = "https://raw.githubusercontent.com/$gitUser/$gitRepo/main/BuildOutput/version.json"
+$versionUrl  = "https://raw.githubusercontent.com/$gitUser/$gitRepo/main/output/version.json"
 
 # === Tạo dữ liệu version.json
 $buildTime = Get-Date -Format "yyyy-MM-dd HH:mm"

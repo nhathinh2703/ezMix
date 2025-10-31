@@ -1,7 +1,9 @@
-﻿using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Desktop.Models;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace Desktop.ViewModels
 {
@@ -33,7 +35,13 @@ namespace Desktop.ViewModels
                 }
             };
 
-            AppVersion = $"v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}";
+            //AppVersion = $"v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}";
+            var fullVersion = FileVersionInfo
+                .GetVersionInfo(Assembly.GetExecutingAssembly().Location)
+                .ProductVersion;
+            var shortVersion = fullVersion?.Split('+')[0];
+            AppVersion = $"v{shortVersion}";
+
             CurrentViewModel = _serviceProvider?.GetService(typeof(HomeViewModel)) as ObservableObject;
         }
 
