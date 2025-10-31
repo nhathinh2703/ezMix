@@ -28,31 +28,26 @@ namespace Desktop
         {
             base.OnStartup(e);
 
+            // Kiểm tra kết nối mạng
             if (await CheckInternet.IsInternetAvailableAsync())
             {
                 var updateService = _serviceProvider.GetRequiredService<IUpdateService>();
-                var success = await updateService.CheckAndUpdateAsync("version.json");
+                var context = await updateService.GetUpdateContextAsync("version.json");
 
-                if (success)
+                if (context != null)
                 {
-                    // Gọi Updater.exe để ghi đè và khởi động lại
                     var updaterPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Updater.exe");
-                    var extractDir = Path.Combine(Path.GetTempPath(), "ezUpdateExtract");
-                    var newExe = Path.Combine(extractDir, "ezMix.exe");
-                    var currentExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ezMix.exe");
+                    var currentExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, context.FileExe);
 
-                    if (File.Exists(updaterPath) && File.Exists(newExe))
+                    Process.Start(new ProcessStartInfo
                     {
-                        Process.Start(new ProcessStartInfo
-                        {
-                            FileName = updaterPath,
-                            Arguments = $"\"{newExe}\" \"{currentExe}\"",
-                            UseShellExecute = true
-                        });
+                        FileName = updaterPath,
+                        Arguments = $"\"{context.Url}\" \"{currentExe}\"",
+                        UseShellExecute = true
+                    });
 
-                        Shutdown(); // Thoát app hiện tại để Updater xử lý
-                        return;
-                    }
+                    Shutdown();
+                    return;
                 }
             }
 

@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="Assets\Icons\" />
     <Folder Include="Helpers\" />
   </ItemGroup>
 

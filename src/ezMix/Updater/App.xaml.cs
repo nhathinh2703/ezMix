@@ -15,19 +15,25 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        base.OnStartup(e);
+
         var serviceCollection = new ServiceCollection();
         ConfigureServices(serviceCollection);
         Services = serviceCollection.BuildServiceProvider();
 
+        // Kiểm tra tham số dòng lệnh
         if (e.Args.Length != 2)
         {
-            MessageBox.Show("Thiếu tham số cập nhật.");
+            MessageBox.Show("Thiếu tham số cập nhật.\nCần truyền: <zipUrl> <targetExe>");
             Shutdown();
             return;
         }
 
+        var zipUrl = e.Args[0];
+        var targetExe = e.Args[1];
+
         var vm = Services.GetRequiredService<UpdateViewModel>();
-        var window = new UpdateWindow(vm, e.Args[0], e.Args[1]);
+        var window = new UpdateWindow(vm, zipUrl, targetExe);
         window.Show();
     }
 

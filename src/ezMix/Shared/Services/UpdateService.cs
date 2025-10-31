@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Shared.Interfaces;
 using Shared.Models;
-using System.IO.Compression;
 
 namespace Shared.Services
 {
@@ -16,57 +15,31 @@ namespace Shared.Services
             _log = log;
         }
 
-        public async Task<bool> CheckAndUpdateAsync(string localPath)
+        public async Task<UpdateContext?> GetUpdateContextAsync(string localPath)
         {
             var local = await _checker.ReadLocalAsync(localPath);
-            if (local == null) return false;
+            if (local == null) return null;
 
             var remoteUrl = local.VersionUrl ??
                 $"https://raw.githubusercontent.com/{local.GitHubUser}/{local.GitHubRepo}/main/output/version.json";
 
             var remote = await _checker.ReadRemoteAsync(remoteUrl);
-            if (remote == null || string.IsNullOrEmpty(remote.Version)) return false;
+            if (remote == null || string.IsNullOrEmpty(remote.Version)) return null;
 
             if (new Version(remote.Version) <= new Version(local.Version!))
             {
                 _log.LogInformation("✅ Phiên bản hiện tại đã là mới nhất.");
-                return false;
+                return null;
             }
 
             _log.LogInformation("🚀 Có bản cập nhật mới: {version}", remote.Version);
-            var context = new UpdateContext
+
+            return new UpdateContext
             {
                 Url = remote.ZipUrl!,
                 FileZip = remote.File!,
                 FileExe = $"{remote.AppName!}.exe"
             };
-
-            return await DownloadAndExtractAsync(context);
-        }
-
-        private async Task<bool> DownloadAndExtractAsync(UpdateContext context)
-        {
-            try
-            {
-                var tempZip = Path.Combine(Path.GetTempPath(), "ezUpdate.zip");
-                var extractDir = Path.Combine(Path.GetTempPath(), "ezUpdateExtract");
-
-                using var client = new HttpClient();
-                var data = await client.GetByteArrayAsync(context.Url);
-                await File.WriteAllBytesAsync(tempZip, data);
-
-                if (Directory.Exists(extractDir))
-                    Directory.Delete(extractDir, true);
-
-                ZipFile.ExtractToDirectory(tempZip, extractDir);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _log.LogError(ex, "❌ Lỗi khi tải và giải nén bản cập nhật.");
-                return false;
-            }
         }
     }
 }
