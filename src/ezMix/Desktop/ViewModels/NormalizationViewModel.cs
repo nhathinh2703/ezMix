@@ -135,7 +135,7 @@ namespace Desktop.ViewModels
                 document = await _interopWordService.OpenDocumentAsync(filePath, visible: true);
                 document.Activate();
 
-                await _interopWordService.FormatDocumentAsync(document);
+                //await _interopWordService.FormatDocumentAsync(document);
                 await _interopWordService.DeleteAllHeadersAndFootersAsync(document);
                 await _interopWordService.ConvertListFormatToTextAsync(document);
 
@@ -166,8 +166,8 @@ namespace Desktop.ViewModels
                 await _interopWordService.FindAndReplaceRedToUnderlinedAsync(document);
 
                 Word.Range range = document.Range();
-                range.Font.Name = "Times New Roman";
-                range.Font.Size = 12;
+                //range.Font.Name = "Times New Roman";
+                //range.Font.Size = 12;
                 range.Font.Color = WdColor.wdColorBlack;
 
                 foreach (Word.Paragraph paragraph in document.Paragraphs)

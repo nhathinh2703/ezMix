@@ -72,7 +72,7 @@ namespace Desktop
                 }
             }
 
-            // 🚪 Khởi động giao diện chính
+            // 🚪 Khởi động giao diện chính+
             ViewTemplateSelector.ViewLocator = _serviceProvider.GetRequiredService<IViewLocator>();
             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
             mainWindow!.DataContext = _serviceProvider.GetRequiredService<MainViewModel>();
