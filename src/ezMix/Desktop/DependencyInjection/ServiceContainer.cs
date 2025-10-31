@@ -3,7 +3,8 @@ using Desktop.Services.Interfaces;
 using Desktop.ViewModels;
 using Desktop.Views;
 using Microsoft.Extensions.DependencyInjection;
-using Updater.Services;
+using Shared.Interfaces;
+using Shared.Services;
 
 namespace Desktop.DependencyInjection
 {

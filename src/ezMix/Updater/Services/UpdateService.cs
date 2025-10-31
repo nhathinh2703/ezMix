@@ -1,80 +1,28 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Diagnostics;
-using System.IO.Compression;
-using Updater.Models;
+﻿using System.Diagnostics;
+using System.IO;
 
 namespace Updater.Services
 {
     public class UpdateService : IUpdateService
     {
-        private readonly IVersionChecker _checker;
-        private readonly ILogger<UpdateService> _log;
-
-        public UpdateService(IVersionChecker checker, ILogger<UpdateService> log)
+        public async Task<string> RunUpdateAsync(string sourceExe, string targetExe)
         {
-            _checker = checker;
-            _log = log;
-        }
+            await Task.Delay(2000);
 
-        public async Task<bool> CheckAndUpdateAsync(string localPath)
-        {
-            var local = await _checker.ReadLocalAsync(localPath);
-            if (local == null) return false;
-
-            var remoteUrl = local.VersionUrl ??
-                $"https://raw.githubusercontent.com/{local.GitHubUser}/{local.GitHubRepo}/main/output/version.json";
-
-            var remote = await _checker.ReadRemoteAsync(remoteUrl);
-            if (remote == null || string.IsNullOrEmpty(remote.Version)) return false;
-
-            if (new Version(remote.Version) <= new Version(local.Version!))
-            {
-                _log.LogInformation("✅ Phiên bản hiện tại đã là mới nhất.");
-                return false;
-            }
-
-            _log.LogInformation("🚀 Có bản cập nhật mới: {version}", remote.Version);
-            var context = new UpdateContext
-            {
-                Url = remote.ZipUrl!,
-                FileName = remote.File!,
-                AppExe = remote.File!
-            };
-
-            return await DownloadAndApplyAsync(context);
-        }
-
-        private async Task<bool> DownloadAndApplyAsync(UpdateContext context)
-        {
             try
             {
-                var tempZip = Path.Combine(Path.GetTempPath(), "ezUpdate.zip");
-                var extractDir = Path.Combine(Path.GetTempPath(), "ezUpdateExtract");
-
-                using var client = new HttpClient();
-                var data = await client.GetByteArrayAsync(context.Url);
-                await File.WriteAllBytesAsync(tempZip, data);
-
-                if (Directory.Exists(extractDir))
-                    Directory.Delete(extractDir, true);
-
-                ZipFile.ExtractToDirectory(tempZip, extractDir);
-
-                var newExe = Path.Combine(extractDir, context.FileName);
-                var currentExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, context.FileName);
-
-                if (!File.Exists(newExe))
-                    throw new FileNotFoundException("Không tìm thấy file exe mới.");
-
-                File.Copy(newExe, currentExe, true);
-                Process.Start(currentExe);
-                Environment.Exit(0);
-                return true;
+                File.Copy(sourceExe, targetExe, true);
+                await Task.Delay(1000);
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = targetExe,
+                    UseShellExecute = true
+                });
+                return "✅ Cập nhật thành công. Đang khởi động lại...";
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "❌ Lỗi khi cập nhật.");
-                return false;
+                return $"❌ Lỗi: {ex.Message}";
             }
         }
     }

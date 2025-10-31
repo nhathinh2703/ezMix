@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Text.Json;
-using Updater.Models;
+using Shared.Models;
+using Shared.Interfaces;
 
-namespace Updater.Services
+namespace Shared.Services
 {
     public class VersionChecker : IVersionChecker
     {

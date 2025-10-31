@@ -1,6 +1,6 @@
-﻿using Updater.Models;
+﻿using Shared.Models;
 
-namespace Updater.Services
+namespace Shared.Interfaces
 {
     public interface IVersionChecker
     {

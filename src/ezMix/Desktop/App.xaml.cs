@@ -4,8 +4,10 @@ using Desktop.Services.Interfaces;
 using Desktop.ViewModels;
 using Desktop.Views;
 using Microsoft.Extensions.DependencyInjection;
+using Shared.Interfaces;
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
-using Updater.Services;
 
 namespace Desktop
 {
@@ -28,8 +30,30 @@ namespace Desktop
 
             if (await CheckInternet.IsInternetAvailableAsync())
             {
-                var updater = _serviceProvider.GetRequiredService<IUpdateService>();
-                await updater.CheckAndUpdateAsync("version.json");
+                var updateService = _serviceProvider.GetRequiredService<IUpdateService>();
+                var success = await updateService.CheckAndUpdateAsync("version.json");
+
+                if (success)
+                {
+                    // Gọi Updater.exe để ghi đè và khởi động lại
+                    var updaterPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Updater.exe");
+                    var extractDir = Path.Combine(Path.GetTempPath(), "ezUpdateExtract");
+                    var newExe = Path.Combine(extractDir, "ezMix.exe");
+                    var currentExe = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ezMix.exe");
+
+                    if (File.Exists(updaterPath) && File.Exists(newExe))
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = updaterPath,
+                            Arguments = $"\"{newExe}\" \"{currentExe}\"",
+                            UseShellExecute = true
+                        });
+
+                        Shutdown(); // Thoát app hiện tại để Updater xử lý
+                        return;
+                    }
+                }
             }
 
             // 🚪 Khởi động giao diện chính+

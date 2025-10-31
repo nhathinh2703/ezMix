@@ -70,7 +70,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MathType\MathType.csproj" />
-    <ProjectReference Include="..\Updater\Updater.csproj" />
+    <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
 
 </Project>

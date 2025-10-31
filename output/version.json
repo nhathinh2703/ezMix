@@ -1,12 +1,12 @@
 ﻿{
     "AppName":  "ezMix",
-    "Version":  "1.0.1",
-    "File":  "ezMix-v1.0.1.zip",
-    "ZipUrl":  "https://github.com/nhathinh2703/ezMix/releases/download/v1.0.1/ezMix-v1.0.1.zip",
+    "Version":  "1.0.0",
+    "File":  "ezMix-v1.0.0.zip",
+    "ZipUrl":  "https://github.com/nhathinh2703/ezMix/releases/download/v1.0.0/ezMix-v1.0.0.zip",
     "VersionUrl":  "https://raw.githubusercontent.com/nhathinh2703/ezMix/main/output/version.json",
     "GitHubUser":  "nhathinh2703",
     "GitHubRepo":  "ezMix",
-    "Build":  "2025-10-31 16:13",
-    "Sha":  "92f61c0",
-    "ChangeLog":  "- Build Release lúc 2025-10-31 16:13"
+    "Build":  "2025-10-31 20:48",
+    "Sha":  "b06c79f",
+    "ChangeLog":  "- Build Release lúc 2025-10-31 20:48"
 }
