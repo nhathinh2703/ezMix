@@ -268,7 +268,7 @@ namespace MTSDKDN
         #region MathType SDK Function Declarations
 
         [DllImport("MT6.dll", CharSet = CharSet.Auto, PreserveSig = true, ExactSpelling = true, SetLastError = true)]
-        private static extern int MTAPIConnect(short mtStart, short timeout);
+        public static extern int MTAPIConnect(short mtStart, short timeout);
 
         [DllImport("MT6.DLL", CharSet = CharSet.Auto, PreserveSig = true, ExactSpelling = true, SetLastError = true)]
         private static extern int MTAPIVersion(ushort apiversion);

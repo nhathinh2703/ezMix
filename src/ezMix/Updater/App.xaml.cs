@@ -32,6 +32,9 @@ public partial class App : Application
         var zipUrl = e.Args[0];
         var targetExe = e.Args[1];
 
+        //var zipUrl = "https://github.com/nhathinh2703/ezMix/releases/download/v1.0.2/ezMix-v1.0.2.zip";
+        //var targetExe = "D:\\GitHub\\ezMix\\src\\ezMix\\Desktop\\bin\\Debug\\net8.0-windows\\ezMix.exe";
+
         var vm = Services.GetRequiredService<UpdateViewModel>();
         var window = new UpdateWindow(vm, zipUrl, targetExe);
         window.Show();

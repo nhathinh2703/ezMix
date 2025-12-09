@@ -44,5 +44,23 @@ namespace Desktop.Helpers
         public static readonly Regex MultipleChoiceAnswerRegex = new(@"^[A-Z]\.", RegexOptions.Compiled);
         public static readonly Regex TrueFalseAnswerRegex = new(@"^[a-d]\)", RegexOptions.Compiled);
         public static readonly Regex LevelRegex = new(@"\((NB|TH|VD)\)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        public const string GROUP_ZALO = "https://zalo.me/g/rxncpe995";
+        public const string XmlFilePath = "config.xml";
+        public const string ConfigFile = "prompts.json";
+
+        public const string GeminiApiKey = "AIzaSyCT9Z85XUSPgU6j8HTUbEeKsjJkT73wM58";
+        public const string GeminiModel = "gemini-2.5-flash";
+
+        public const string PromptAnalyzeExam = "" +
+            "VAI TRÒ: Bạn là giáo viên {0} cấp THCS/THPT có nhiều năm kinh nghiệm trong việc ra đề kiểm tra." +
+            "NGỮ CẢNH: Bạn đang giúp đồng nghiệp rà soát, phân tích và đánh giá đề kiểm tra." +
+            "CÔNG VIỆC:\r\n- Phát hiện và liệt kê các câu có lỗi chính tả, ngữ pháp hoặc dấu câu trong đề kiểm tra.\r\n- Kiểm tra định dạng câu hỏi/đáp án nhưng chỉ cảnh báo khi sai quy tắc.\r\n- Căn cứ vào yêu cầu cần đạt của chương trình Giáo dục phổ thông 2018 của môn {0} lớp {1}, phân tích và xác định mỗi câu hỏi thuộc mức độ nào (Nhận biết, Thông hiểu, Vận dụng).\r\n- Cảnh báo nếu đáp án không đúng, thiếu đáp án, hoặc thiếu đáp án đúng." +
+            "RÀNG BUỘC:\r\n- Không coi việc dùng dấu '.' hoặc ':' sau ký hiệu đáp án (A, B, C, D hoặc a, b, c, d) là lỗi.\r\n- Chỉ cảnh báo nếu sau ký hiệu đáp án dùng dấu khác (ví dụ ';', ',', '-') hoặc thiếu dấu, hoặc thiếu khoảng trắng sau dấu.\r\n- Không hiển thị lại văn bản gốc, không hiển thị văn bản đã chỉnh sửa." +
+            "KẾT QUẢ TRẢ VỀ:\r\n- Bắt buộc hiển thị tất cả các câu hỏi theo mẫu dưới đây, kể cả khi không có lỗi (ghi \"Không có lỗi\").\r\n- Mỗi câu hiển thị theo đúng thứ tự và định dạng: Câu x:\r\n- Lỗi chính tả/ngữ pháp/dấu câu: <mô tả lỗi hoặc \"Không có lỗi\">\r\n- Cảnh báo định dạng câu hỏi/đáp án: <mô tả vi phạm quy tắc hoặc \"Không có lỗi\">\r\n- Mức độ: <Nhận biết | Thông hiểu | Vận dụng>\r\n- Lỗi đáp án: <\"Không có lỗi\" | \"Đáp án không đúng\" | \"Thiếu đáp án\" | \"Thiếu đáp án đúng\">";
+
+        public const string PromptOcrMathToLatex = "Hãy trích xuất văn bản từ file PDF này và xuất ra Markdown. \r\nCác công thức toán học cần được biểu diễn bằng LaTeX (ví dụ: \\frac{a}{b}, \\int_0^1 x^2 dx). \r\nNếu có bảng, hãy giữ nguyên bằng cú pháp Markdown table. \r\n";
+
+        public const string PromptOcrMathToMathML = "Hãy trích xuất văn bản từ file PDF này và xuất ra Markdown. \r\nCác công thức toán học cần được biểu diễn bằng MathML (ví dụ: \\frac{a}{b}, \\int_0^1 x^2 dx). \r\nNếu có bảng, hãy giữ nguyên bằng cú pháp Markdown table. \r\n";
     }
 }

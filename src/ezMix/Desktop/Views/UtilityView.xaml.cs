@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace Desktop.Views
 {
     /// <summary>
-    /// Interaction logic for NormalizationView.xaml
+    /// Interaction logic for UtilityView.xaml
     /// </summary>
-    public partial class NormalizationView : System.Windows.Controls.UserControl
+    public partial class UtilityView : UserControl
     {
-        public NormalizationView()
+        public UtilityView()
         {
             InitializeComponent();
         }

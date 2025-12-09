@@ -1,9 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Shared.Models;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
+using System.Text.Json;
 using System.Windows;
 using Updater.Services;
 
@@ -14,6 +16,7 @@ namespace Updater.ViewModels
         private readonly IUpdateService _service;
         [ObservableProperty] private string _status = "🔄 Đang chuẩn bị cập nhật...";
         [ObservableProperty] private string _progressText = "0%";
+        [ObservableProperty] private string _versionText = "0%";
         private double _progress;
         public double Progress
         {
@@ -32,11 +35,16 @@ namespace Updater.ViewModels
 
         public async Task RunAsync(string zipUrl, string targetExe)
         {
-            var tempZip = Path.Combine(Path.GetTempPath(), "ezUpdate.zip");
-            var extractDir = Path.Combine(Path.GetTempPath(), "ezUpdateExtract");
+            var tempZip = Path.Combine(Path.GetTempPath(), $"ezUpdate_{Guid.NewGuid()}.zip");
+            var extractDir = Path.Combine(Path.GetTempPath(), $"ezUpdateExtract_{Guid.NewGuid()}");
 
             try
-            {
+            {// 0. Hiển thị thông tin phiên bản trước khi tải
+                var currentDir = Path.GetDirectoryName(targetExe)!;
+                var currentVersion = LoadVersionInfo(currentDir)?.Version ?? "unknown";
+                VersionText = $"📥 ezMix {currentVersion} → đang kiểm tra...";
+
+                // 1. Tải file zip với tiến độ
                 Status = "⏳ Đang tải bản cập nhật...";
                 Progress = 0;
 
@@ -64,6 +72,10 @@ namespace Updater.ViewModels
                     }
                 }
 
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+
+                // 2. Giải nén
                 Status = "📦 Đang giải nén...";
                 Progress = 0;
 
@@ -72,20 +84,49 @@ namespace Updater.ViewModels
 
                 ZipFile.ExtractToDirectory(tempZip, extractDir);
 
-                var newExe = Path.Combine(extractDir, Path.GetFileName(targetExe));
-                if (!File.Exists(newExe))
+                // 3. Đọc version hiện tại và mới
+                currentDir = Path.GetDirectoryName(targetExe)!;
+                currentVersion = LoadVersionInfo(currentDir)?.Version ?? "unknown";
+                var newVersion = LoadVersionInfo(extractDir)?.Version ?? "unknown";
+
+                VersionText = $"📥 ezMix {currentVersion} → {newVersion}";
+
+                if (currentVersion == newVersion)
                 {
-                    Status = "❌ Không tìm thấy file mới sau khi giải nén.";
+                    Status = $"✅ Phiên bản hiện tại ({currentVersion}) đã là mới nhất.";
                     await Task.Delay(1500);
                     Application.Current.Shutdown();
                     return;
                 }
 
-                Status = "🛠 Đang ghi đè ứng dụng...";
+                Status = $"⬆️ Cập nhật từ {currentVersion} lên {newVersion}";
+                await Task.Delay(1000);
+
+                // 4. Ghi đè toàn bộ file
+                Status = "🛠 Đang ghi đè các file cập nhật...";
                 Progress = 100;
 
-                File.Copy(newExe, targetExe, true);
+                foreach (var sourcePath in Directory.GetFiles(extractDir, "*", SearchOption.AllDirectories))
+                {
+                    var relativePath = Path.GetRelativePath(extractDir, sourcePath);
+                    var destinationPath = Path.Combine(currentDir, relativePath);
 
+                    var destinationDir = Path.GetDirectoryName(destinationPath)!;
+                    if (!Directory.Exists(destinationDir))
+                        Directory.CreateDirectory(destinationDir);
+
+                    try
+                    {
+                        File.Copy(sourcePath, destinationPath, true);
+                    }
+                    catch (IOException ioEx)
+                    {
+                        Status = $"❌ Không thể ghi đè: {relativePath}";
+                        File.AppendAllText("update.log", $"[IO ERROR] {relativePath}: {ioEx.Message}\n");
+                    }
+                }
+
+                // 5. Khởi động lại ứng dụng
                 Status = "🚀 Đang khởi động lại...";
                 await Task.Delay(1000);
 
@@ -98,10 +139,27 @@ namespace Updater.ViewModels
             catch (Exception ex)
             {
                 Status = $"❌ Lỗi: {ex.Message}";
+                File.AppendAllText("update.log", $"[ERROR] {DateTime.Now}: {ex}\n");
             }
 
             await Task.Delay(1500);
             Application.Current.Shutdown();
+        }
+
+        private VersionInfo? LoadVersionInfo(string folder)
+        {
+            var path = Path.Combine(folder, "version.json");
+            if (!File.Exists(path)) return null;
+
+            try
+            {
+                var json = File.ReadAllText(path);
+                return JsonSerializer.Deserialize<VersionInfo>(json);
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

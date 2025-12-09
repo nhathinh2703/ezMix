@@ -1,28 +1,26 @@
-﻿using Desktop.Models;
-using Desktop.ViewModels;
-using System.IO;
+﻿using System.IO;
 using System.Xml.Serialization;
 
 namespace Desktop.Helpers
 {
     public class XmlHelper
     {
-        public static MixInfo LoadFromXml(string filePath)
+        public static T LoadFromXml<T>(string filePath) where T : new()
         {
-            if (!File.Exists(filePath)) return new MixInfo();
+            if (!File.Exists(filePath)) return new T();
 
             using (var stream = new FileStream(filePath, FileMode.Open))
             {
-                var serializer = new XmlSerializer(typeof(MixInfo));
-                return (MixInfo)serializer.Deserialize(stream)!;
+                var serializer = new XmlSerializer(typeof(T));
+                return (T)serializer.Deserialize(stream)!;
             }
         }
 
-        public static void SaveToXml(string filePath, MixInfo data)
+        public static void SaveToXml<T>(string filePath, T data)
         {
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                var serializer = new XmlSerializer(typeof(MixInfo));
+                var serializer = new XmlSerializer(typeof(T));
                 serializer.Serialize(stream, data);
             }
         }

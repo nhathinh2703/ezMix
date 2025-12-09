@@ -8,26 +8,35 @@
         Background="#f8f8f8">
     <StackPanel Margin="20" HorizontalAlignment="Center">
 
-        <!-- Tiêu đề cập nhật -->
-        <TextBlock Text="{Binding Status}" FontSize="16" Margin="0,10" TextAlignment="Center" />
+        <!-- Phiên bản hiện tại → mới -->
+        <TextBlock Text="{Binding VersionText, FallbackValue='📥 Cập nhật ezMix'}"
+           FontSize="16"
+           FontWeight="SemiBold"
+           Foreground="#ff6600"
+           Margin="0,0,0,10"
+           TextAlignment="Center" />
 
+        <!-- Tiêu đề cập nhật -->
+        <TextBlock Text="{Binding Status, FallbackValue='🔄 Đang khởi động cập nhật...'}"
+           FontSize="16"
+           Margin="0,10"
+           TextAlignment="Center" />
         <!-- Thanh tiến trình -->
         <Grid Width="300" Margin="0,10">
             <ProgressBar Height="20"
-                         Minimum="0" Maximum="100"
-                         Value="{Binding Progress}"
-                         Background="#ddd"
-                         Foreground="#ff6600"
-                         />
+                     Minimum="0" Maximum="100"
+                     Value="{Binding Progress}"
+                     Background="#ddd"
+                     Foreground="#ff6600" />
             <TextBlock Text="{Binding ProgressText}"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       FontWeight="Bold"
-                       Foreground="Black"/>
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontWeight="Bold"
+                   Foreground="Black"/>
         </Grid>
 
         <!-- Trạng thái phụ -->
         <TextBlock FontSize="13" Foreground="Gray" TextAlignment="Center" Margin="0,10"
-                   Text="Vui lòng không tắt ứng dụng trong khi cập nhật."/>
+               Text="Vui lòng không tắt ứng dụng trong khi cập nhật."/>
     </StackPanel>
 </Window>

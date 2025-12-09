@@ -4,113 +4,167 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="1000" d:DesignWidth="800">
 
     <Grid Background="White">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="700">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="15">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="800">
+                <!-- Tiêu đề -->
+                <TextBlock Text="🎓 ezMix – Phần mềm trộn đề" FontSize="28" FontWeight="Bold" Foreground="#FF9933" TextAlignment="Center"/>
 
-            <!-- Tiêu đề -->
-            <TextBlock Text="🎓 ezMix – Phần mềm trộn đề" 
-                       FontSize="28" FontWeight="Bold" Foreground="#FF9933" 
-                       TextAlignment="Center"/>
+                <!-- Mô tả ngắn -->
+                <TextBlock FontSize="16" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5">
+                    <Run Text="Giúp bạn "/>
+                    <Run Text="chuẩn hóa" FontWeight="Bold" Foreground="#FF9933"/>
+                    <Run Text=" và "/>
+                    <Run Text="trộn đề" FontWeight="Bold" Foreground="#FF9933"/>
+                    <Run Text=" kiểm tra nhanh chóng, chính xác, bảo mật và hoàn toàn miễn phí."/>
+                </TextBlock>
 
-            <!-- Mô tả ngắn -->
-            <TextBlock Text="Giúp bạn chuẩn hóa và trộn đề kiểm tra một cách tiện lợi, chính xác và bảo mật." 
-                       FontSize="16" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap" Margin="0,10"/>
+                <UniformGrid Columns="2" Rows="2" HorizontalAlignment="Stretch">
+                    <!-- Nhanh chóng -->
+                    <Border Background="#FFF5E5" CornerRadius="10" Padding="10" Margin="5" BorderBrush="#FF9933" BorderThickness="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock FontSize="16" FontWeight="Bold" Foreground="#FF9933" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Run Text="⚡" FontSize="30"/>
+                                <Run Text="Nhanh chóng" FontSize="18"/>
+                            </TextBlock>
+                            <TextBlock Text="Tự động chuẩn hóa đề gốc và trộn đề với nhiều tùy chọn chỉ trong vài giây." FontSize="14" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
 
-            <!-- Các tính năng chính -->
-            <UniformGrid Columns="2" Rows="3" Margin="0,20,0,0" HorizontalAlignment="Center">
+                    <!-- Chính xác -->
+                    <Border Background="#FFF5E5" CornerRadius="10" Padding="10" Margin="5" BorderBrush="#FF9933" BorderThickness="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock FontSize="16" FontWeight="Bold" Foreground="#FF9933" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Run Text="🎯" FontSize="30"/>
+                                <Run Text="Chính xác" FontSize="18"/>
+                            </TextBlock>
+                            <TextBlock Text="Đảm bảo đúng cấu trúc, định dạng và đáp án theo quy định." FontSize="14" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
 
-                <!-- Chuẩn hóa đề -->
-                <Border Background="#FFF5E5" CornerRadius="10" Padding="15" Margin="10" BorderBrush="#FF9933" BorderThickness="1">
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="🧹" FontSize="30" TextAlignment="Center"/>
-                        <TextBlock Text="Chuẩn hóa đề" FontSize="16" FontWeight="Bold" Foreground="#FF9933" TextAlignment="Center"/>
+                    <!-- Bảo mật -->
+                    <Border Background="#FFF5E5" CornerRadius="10" Padding="10" Margin="5" BorderBrush="#FF9933" BorderThickness="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock FontSize="16" FontWeight="Bold" Foreground="#FF9933" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Run Text="🔒" FontSize="30"/>
+                                <Run Text="Bảo mật" FontSize="18"/>
+                            </TextBlock>
+                            <TextBlock Text="Toàn bộ quá trình trộn đề diễn ra trên máy của bạn – an toàn và riêng tư tuyệt đối." FontSize="14" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
 
-                        <!-- Đoạn 1 -->
-                        <TextBlock Text="🧠 Nhận dạng nhiều loại câu hỏi: Trắc nghiệm (nhiều lựa chọn, đúng-sai, trả lời ngắn) và tự luận."
-                   FontSize="13" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                    <!-- Miễn phí & Hỗ trợ -->
+                    <Border Background="#FFF5E5" CornerRadius="10" Padding="10" Margin="5" BorderBrush="#FF9933" BorderThickness="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock FontSize="16" FontWeight="Bold" Foreground="#FF9933" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Run Text="🎁" FontSize="30"/>
+                                <Run Text="Miễn phí" FontSize="18"/>
+                            </TextBlock>
+                            <TextBlock Text="Sử dụng không giới hạn, luôn được hỗ trợ kỹ thuật và cập nhật tính năng thường xuyên." FontSize="14" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
 
-                        <!-- Khoảng cách -->
-                        <TextBlock Text="" Height="8"/>
+                <TextBlock Text="🎓 ezMix – Quy ước câu hỏi" Margin="0,10" FontSize="28" FontWeight="Bold" Foreground="#3399FF" TextAlignment="Center"/>
 
-                        <!-- Đoạn 2 -->
-                        <TextBlock Text="📊 Rà soát, thống kê và chuẩn hóa đề kiểm tra."
-                   FontSize="14" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
+                <!-- Quy ước câu hỏi -->
+                <UniformGrid Columns="2" Rows="2" HorizontalAlignment="Stretch">
+                    <!-- Trắc nghiệm Nhiều lựa chọn -->
+                    <Border Background="#E5F5FF" CornerRadius="10" Padding="10" Margin="5" BorderBrush="#3399FF" BorderThickness="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock FontSize="16" FontWeight="Bold" Foreground="#3399FF" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Run Text="✅" FontSize="30"/>
+                                <Run Text="Trắc nghiệm Nhiều lựa chọn" FontSize="18"/>
+                            </TextBlock>
+                            <TextBlock Text="Câu 1: Nội dung câu hỏi?" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                            <TextBlock Text="A. Nội dung đáp án." TextWrapping="Wrap"/>
+                            <TextBlock Text="B. Nội dung đáp án." TextWrapping="Wrap"/>
+                            <TextBlock TextWrapping="Wrap">
+                                <Run Text="C." TextDecorations="Underline"/>
+                                <Run Text=" Nội dung đáp án."/>
+                            </TextBlock>
+                            <TextBlock Text="D. Nội dung đáp án." TextWrapping="Wrap"/>
+                            <TextBlock Text="" Height="8"/>
+                            <TextBlock TextWrapping="Wrap" TextAlignment="Center" Foreground="#3399FF" FontStyle="Italic" FontWeight="Bold">
+                                <Run Text="📝 "/>
+                                <Run Text="Đáp án đúng: C"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
 
+                    <!-- Trắc nghiệm Đúng–Sai -->
+                    <Border Background="#E5F5FF" CornerRadius="10" Padding="10" Margin="5" BorderBrush="#3399FF" BorderThickness="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock FontSize="16" FontWeight="Bold" Foreground="#3399FF" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Run Text="✔️" FontSize="30"/>
+                                <Run Text="Trắc nghiệm Đúng–Sai" FontSize="18"/>
+                            </TextBlock>
+                            <TextBlock Text="Câu 1: Nội dung câu hỏi?" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                            <TextBlock TextWrapping="Wrap">
+                                <Run Text="a)" TextDecorations="Underline"/>
+                                <Run Text=" Nội dung phát biểu"/>
+                            </TextBlock>
+                            <TextBlock Text="b) Nội dung phát biểu" TextWrapping="Wrap"/>
+                            <TextBlock TextWrapping="Wrap">
+                                <Run Text="c)" TextDecorations="Underline"/>
+                                <Run Text=" Nội dung phát biểu"/>
+                            </TextBlock>
+                            <TextBlock Text="d) Nội dung phát biểu" TextWrapping="Wrap"/>
+                            <TextBlock Text="" Height="8"/>
+                            <TextBlock TextWrapping="Wrap" TextAlignment="Center" Foreground="#3399FF" FontStyle="Italic" FontWeight="Bold">
+                                <Run Text="✒️ "/>
+                                <Run Text="Phát biểu đúng (a và c), phát biểu sai (b và d)"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
 
-                <!-- Trộn đề -->
-                <Border Background="#FFF5E5" CornerRadius="10" Padding="15" Margin="10" BorderBrush="#FF9933" BorderThickness="1">
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="🔀" FontSize="30" TextAlignment="Center"/>
-                        <TextBlock Text="Trộn đề" FontSize="16" FontWeight="Bold" Foreground="#FF9933" TextAlignment="Center"/>
+                    <!-- Trắc nghiệm Trả lời ngắn -->
+                    <Border Background="#E5F5FF" CornerRadius="10" Padding="10" Margin="5" BorderBrush="#3399FF" BorderThickness="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock FontSize="16" FontWeight="Bold" Foreground="#3399FF" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Run Text="✍️" FontSize="30"/>
+                                <Run Text="Trắc nghiệm Trả lời ngắn" FontSize="18"/>
+                            </TextBlock>
+                            <TextBlock Text="Câu 1: Nội dung câu hỏi?" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                            <TextBlock Text="A. 0000" TextWrapping="Wrap"/>
+                            <TextBlock Text="" Height="8"/>
+                            <TextBlock TextWrapping="Wrap" TextAlignment="Center" Foreground="#3399FF" FontStyle="Italic" FontWeight="Bold">
+                                <Run Text="📝 "/>
+                                <Run Text="Đáp án: '0000'"/>
+                            </TextBlock>
+                            <TextBlock Text="Số lượng kí tự của đáp án ≤ 4" TextWrapping="Wrap" TextAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
+                        </StackPanel>
+                    </Border>
 
-                        <!-- Đoạn mô tả chính -->
-                        <TextBlock Text="🧩 Tạo nhiều phiên bản đề kiểm tra khác nhau."
-                   FontSize="14" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                    <!-- Câu hỏi Tự luận -->
+                    <Border Background="#E5F5FF" CornerRadius="10" Padding="10" Margin="5" BorderBrush="#3399FF" BorderThickness="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock FontSize="16" FontWeight="Bold" Foreground="#3399FF" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Run Text="🧾" FontSize="30"/>
+                                <Run Text="Tự luận" FontSize="18"/>
+                            </TextBlock>
+                            <TextBlock Text="Câu 1: Nội dung câu hỏi?" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                            <TextBlock Text="A. Hướng dẫn giải" TextWrapping="Wrap"/>
+                            <TextBlock Text="" Height="8"/>
+                            <TextBlock TextWrapping="Wrap" TextAlignment="Center" Foreground="#3399FF" FontStyle="Italic" FontWeight="Bold">
+                <Run Text="📝 "/>
+                <Run Text="Đáp án: 'Hướng dẫn giải'"/>
+                            </TextBlock>
+                            <TextBlock Text="Số lượng kí tự của đáp án ≥ 5" TextWrapping="Wrap" TextAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
 
-                        <!-- Khoảng cách -->
-                        <TextBlock Text="" Height="8"/>
-
-                        <!-- Đoạn bổ sung -->
-                        <TextBlock Text="📁 Hỗ trợ trộn câu hỏi theo nhóm, giữ định dạng và cấu trúc đề gốc."
-                   FontSize="13" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-
-
-                <!-- Tiện lợi & nhanh chóng -->
-                <Border Background="#FFF5E5" CornerRadius="10" Padding="15" Margin="10" BorderBrush="#FF9933" BorderThickness="1">
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="⚡" FontSize="30" TextAlignment="Center"/>
-                        <TextBlock Text="Tiện lợi và nhanh chóng" FontSize="16" FontWeight="Bold" Foreground="#FF9933" TextAlignment="Center"/>
-                        <TextBlock Text="Giao diện thân thiện, thao tác đơn giản. Tự động nhận dạng cấu trúc đề và loại câu hỏi." FontSize="14" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Chính xác & Bảo mật -->
-                <Border Background="#FFF5E5" CornerRadius="10" Padding="15" Margin="10" BorderBrush="#FF9933" BorderThickness="1">
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="🔒" FontSize="30" TextAlignment="Center"/>
-                        <TextBlock Text="Chính xác và bảo mật" FontSize="16" FontWeight="Bold" Foreground="#FF9933" TextAlignment="Center"/>
-
-                        <!-- Đoạn mô tả chính -->
-                        <TextBlock Text="💾 Dữ liệu đề kiểm tra được xử lý và lưu trữ hoàn toàn trên máy cục bộ, đảm bảo tính bảo mật tuyệt đối."
-                   FontSize="14" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Miễn phí -->
-                <Border Background="#FFF5E5" CornerRadius="10" Padding="15" Margin="10" BorderBrush="#FF9933" BorderThickness="1">
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="🎁" FontSize="30" TextAlignment="Center"/>
-                        <TextBlock Text="Miễn phí" FontSize="16" FontWeight="Bold" Foreground="#FF9933" TextAlignment="Center"/>
-                        <TextBlock Text="Phần mềm hoàn toàn miễn phí – sử dụng không giới hạn!" FontSize="14" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Hỗ trợ -->
-                <Border Background="#FFF5E5" CornerRadius="10" Padding="15" Margin="10" BorderBrush="#FF9933" BorderThickness="1">
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="❓" FontSize="30" TextAlignment="Center"/>
-                        <TextBlock Text="Hỗ trợ" FontSize="16" FontWeight="Bold" Foreground="#FF9933" TextAlignment="Center"/>
-
-                        <!-- Đoạn mô tả chính -->
-                        <TextBlock Text="📘 Hướng dẫn sử dụng chi tiết, dễ hiểu cho giáo viên và người soạn đề."
-                   FontSize="14" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
-
-                        <!-- Khoảng cách -->
-                        <TextBlock Text="" Height="8"/>
-
-                        <!-- Đoạn bổ sung -->
-                        <TextBlock Text="📞 Kênh liên hệ trực tiếp để phản hồi, góp ý và nhận hỗ trợ kỹ thuật."
-                   FontSize="13" Foreground="Gray" TextAlignment="Center" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-
-            </UniformGrid>
-        </StackPanel>
+                <!-- Lời ngỏ -->
+                <TextBlock TextWrapping="Wrap"
+                           Margin="0,10"
+                           FontSize="14"
+                           Text="🧡 Tác giả luôn nỗ lực để mang lại trải nghiệm tốt nhất đến người dùng. Tuy nhiên, nếu có sai sót trong quá trình sử dụng, rất mong nhận được góp ý từ bạn qua nhóm hỗ trợ hoặc liên hệ trực tiếp tác giả. Sự đóng góp của bạn là động lực để ezMix ngày càng hoàn thiện và phục vụ tốt nhất cho cộng đồng." 
+                           Foreground="#FF9933" 
+                           TextAlignment="Center"/>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>

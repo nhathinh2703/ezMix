@@ -116,12 +116,10 @@ namespace Desktop.Services.Implementations
                         }
                         await AddFooterAsync(mixDoc, version);
                         await AddEndNotesAsync(mixDoc);
-
+                        await FormatAllParagraphsAsync(mixDoc);
                         await AppendGuideAsync(answerDoc, answers, mixInfo, version);
                         await MoveEssayTableToEndAsync(answerDoc);
-
                         await FormatAllParagraphsAsync(answerDoc);
-
                         mixDoc.MainDocumentPart!.Document.Save();
                         answerDoc.MainDocumentPart!.Document.Save();
                     }
@@ -139,12 +137,12 @@ namespace Desktop.Services.Implementations
 
                 var allBlocks = SplitQuestions(body!);
                 var grouped = new Dictionary<QuestionType, List<List<OpenXmlElement>>>
-            {
-                { QuestionType.MultipleChoice, new() },
-                { QuestionType.TrueFalse, new() },
-                { QuestionType.ShortAnswer, new() },
-                { QuestionType.Essay, new() }
-            };
+                {
+                    { QuestionType.MultipleChoice, new() },
+                    { QuestionType.TrueFalse, new() },
+                    { QuestionType.ShortAnswer, new() },
+                    { QuestionType.Essay, new() }
+                };
 
                 foreach (var block in allBlocks)
                 {
@@ -581,33 +579,63 @@ namespace Desktop.Services.Implementations
                     newFirstPara.Append(new Run(new TabChar()));
 
                     // Thêm nhãn mới (in đậm)
-                    var labelRun = new Run(new Text(newLabel));
+                    var labelRun = new Run(new Text($"{newLabel} ") { Space = SpaceProcessingModeValues.Preserve });
                     labelRun.RunProperties = new RunProperties(new Bold());
                     newFirstPara.Append(labelRun);
 
-                    bool labelProcessed = false;
+                    //bool labelProcessed = false;
 
-                    foreach (var node in firstPara!.Elements())
+                    //foreach (var node in firstPara!.Elements())
+                    //{
+                    //    if (!labelProcessed && node is Run run)
+                    //    {
+                    //        string runText = run.InnerText.TrimStart();
+                    //        if (runText.StartsWith(item.Label))
+                    //        {
+                    //            string remaining = runText.Substring(item.Label.Length).TrimStart();
+
+                    //            if (!string.IsNullOrEmpty(remaining))
+                    //            {
+                    //                // Loại bỏ dấu cách thừa đầu dòng
+                    //                remaining = remaining.TrimStart();
+
+                    //                var newRun = new Run(new Text(remaining) { Space = SpaceProcessingModeValues.Preserve });
+                    //                newFirstPara.Append(newRun);
+                    //            }
+                    //            labelProcessed = true;
+                    //            continue;
+                    //        }
+                    //    }
+
+                    //    // Clone mọi thứ khác, giữ nguyên Equation, hình ảnh...
+                    //    newFirstPara.Append(node.CloneNode(true));
+                    //}
+
+                    // Gộp toàn bộ nội dung
+                    string fullText = string.Concat(firstPara!.Descendants<Text>().Select(t => t.Text)).Trim();
+
+                    // Tách nhãn và nội dung
+                    var match = Regex.Match(fullText, @"^([a-d]\))\s*(.*)", RegexOptions.IgnoreCase);
+                    string label = match.Success ? match.Groups[1].Value : newLabel;
+                    string content = match.Success ? match.Groups[2].Value : fullText;
+
+                    // Xóa toàn bộ nội dung cũ
+                    newFirstPara.RemoveAllChildren<Run>();
+
+                    // Gán lại nhãn mới (in đậm) + nội dung
+                    labelRun = new Run(new RunProperties(new Bold()), new Text($"{newLabel} ") { Space = SpaceProcessingModeValues.Preserve });
+                    var contentRun = new Run(new Text(content.Trim()) { Space = SpaceProcessingModeValues.Preserve });
+
+                    newFirstPara.Append(new Run(new TabChar()));
+                    newFirstPara.Append(labelRun);
+                    newFirstPara.Append(contentRun);
+
+                    // Giữ lại hình ảnh, công thức, v.v.
+                    foreach (var extra in firstPara.Elements().Where(e => !(e is Run)))
                     {
-                        if (!labelProcessed && node is Run run)
-                        {
-                            string runText = run.InnerText.TrimStart();
-                            if (runText.StartsWith(item.Label))
-                            {
-                                string remaining = runText.Substring(item.Label.Length).TrimStart();
-                                if (!string.IsNullOrEmpty(remaining))
-                                {
-                                    var newRun = new Run(new Text(remaining) { Space = SpaceProcessingModeValues.Preserve });
-                                    newFirstPara.Append(newRun);
-                                }
-                                labelProcessed = true;
-                                continue;
-                            }
-                        }
-
-                        // Clone mọi thứ khác, giữ nguyên Equation, hình ảnh...
-                        newFirstPara.Append(node.CloneNode(true));
+                        newFirstPara.Append(extra.CloneNode(true));
                     }
+
 
                     resultParas.Add(newFirstPara);
 
@@ -795,7 +823,7 @@ namespace Desktop.Services.Implementations
                 result.Add(current);
 
             return result;
-        }
+        }       
 
         public async Task<List<Question>> ParseDocxQuestionsAsync(string filePath)
         {
@@ -820,18 +848,16 @@ namespace Desktop.Services.Implementations
                     {
                         Code = code++,
                         Level = Level.Know,
-                        IsValid = false // mặc định
+                        IsValid = false
                     };
 
-                    // Lấy mức độ từ tiêu đề nếu có
                     var levelMatch = levelRegex.Match(text);
                     if (levelMatch.Success)
                     {
                         question.Level = GetLevelFromText(levelMatch.Value);
-                        text = levelRegex.Replace(text, "").Trim(); // loại bỏ ký hiệu (NB) khỏi nội dung câu
+                        text = levelRegex.Replace(text, "").Trim();
                     }
 
-                    // ✅ Lấy nội dung câu hỏi
                     var questionTextRuns = new List<Run>();
                     questionTextRuns.AddRange(paragraphs[i].Elements<Run>());
                     int j = i + 1;
@@ -841,7 +867,6 @@ namespace Desktop.Services.Implementations
                         var para = paragraphs[j];
                         string line = para.InnerText.Trim();
 
-                        // Khi gặp dòng bắt đầu là đáp án thì dừng thu thập nội dung câu hỏi
                         if (mcAnswerRegex.IsMatch(line) || trueFalseAnswer.IsMatch(line))
                             break;
 
@@ -849,87 +874,79 @@ namespace Desktop.Services.Implementations
                         j++;
                     }
 
-                    // Ghép nội dung từ tất cả các run lại (bao gồm cả dòng tiêu đề)
                     string rawText = string.Join("", questionTextRuns.Select(r => r.InnerText).Where(t => !string.IsNullOrWhiteSpace(t))).Trim();
-
-                    // Tách phần "Câu X." ra nếu có, rồi thêm dấu cách
                     var match = Regex.Match(rawText, @"^(Câu\s+\d+[\.:]?)\s*(.*)", RegexOptions.IgnoreCase);
                     question.QuestionText = match.Success ? $"{match.Groups[1].Value} {match.Groups[2].Value.Trim()}" : rawText;
 
-                    // ✅ Lấy danh sách đáp án và đáp án đúng
                     var answers = new List<string>();
                     var correctAnswers = new List<string>();
+                    var currentAnswerLines = new List<string>();
 
                     while (j < paragraphs.Count && !questionHeader.IsMatch(paragraphs[j].InnerText.Trim()))
                     {
                         var para = paragraphs[j];
                         string line = para.InnerText.Trim();
 
-                        if (mcAnswerRegex.IsMatch(line))
-                        {
-                            answers.Add(line);
-                            string label = line.Substring(0, 2); // ví dụ "A.", "a)", ...
-                            if (IsUnderlined(para, label))
-                                correctAnswers.Add(label.TrimEnd('.', ')'));
-                        }
-                        else if (trueFalseAnswer.IsMatch(line))
-                        {
-                            string label = line.Substring(0, 2);
-                            string indicator = IsUnderlined(para, label) ? "Đ" : "S";
-                            var levelMatchItem = levelRegex.Match(line);
-                            var level = levelMatchItem.Success ? GetLevelFromText(levelMatchItem.Value) : Level.Know;
+                        bool isNewAnswer = mcAnswerRegex.IsMatch(line) || trueFalseAnswer.IsMatch(line);
 
-                            string formatted = $"{label} {indicator} ({ShortLevelCode(level)})";
-                            answers.Add(line);
-                            correctAnswers.Add(formatted);
+                        if (isNewAnswer)
+                        {
+                            if (currentAnswerLines.Count > 0)
+                            {
+                                answers.Add(string.Join("\n", currentAnswerLines));
+                                currentAnswerLines.Clear();
+                            }
+
+                            currentAnswerLines.Add(line);
+
+                            string label = line.Substring(0, 2);
+                            if (trueFalseAnswer.IsMatch(line))
+                            {
+                                string indicator = IsUnderlined(para, label) ? "Đ" : "S";
+                                var levelMatchItem = levelRegex.Match(line);
+                                var level = levelMatchItem.Success ? GetLevelFromText(levelMatchItem.Value) : Level.Know;
+                                string formatted = $"{label} {indicator} ({ShortLevelCode(level)})";
+                                correctAnswers.Add(formatted);
+                            }
+                            else if (mcAnswerRegex.IsMatch(line) && IsUnderlined(para, label))
+                            {
+                                correctAnswers.Add(label.TrimEnd('.', ')'));
+                            }
+                        }
+                        else
+                        {
+                            if (currentAnswerLines.Count > 0)
+                                currentAnswerLines.Add(line);
                         }
 
                         j++;
                     }
 
+                    if (currentAnswerLines.Count > 0)
+                        answers.Add(string.Join("\n", currentAnswerLines));
+
                     question.CountAnswer = answers.Count;
-                    question.Answers = string.Join("\n", answers);
-                    question.CorrectAnswer = string.Join(" | ", correctAnswers);
+                    question.Answers = string.Join("\n\n", answers);
 
-                    // ✅ Phân loại câu hỏi và đánh giá IsValid
-                    if (answers.Count > 1 && answers.All(a => mcAnswerRegex.IsMatch(a)))
+                    if (answers.Count == 1)
                     {
-                        question.QuestionType = QuestionType.MultipleChoice;
+                        string fullAnswer = answers[0].Trim();
 
-                        bool validCount = answers.Count == 4;
-                        bool oneCorrect = correctAnswers.Count == 1;
+                        // Loại bỏ ký hiệu đầu dòng nếu có
+                        if (mcAnswerRegex.IsMatch(fullAnswer) || trueFalseAnswer.IsMatch(fullAnswer))
+                        {
+                            fullAnswer = fullAnswer.Substring(2).Trim();
+                        }
 
-                        if (!validCount)
-                            question.Description += answers.Count < 4 ? "⚠️ Không đủ 4 đáp án. " : "⚠️ Vượt quá 4 đáp án. ";
-                        if (!oneCorrect)
-                            question.Description += "⚠️ Phải có đúng 1 đáp án đúng. ";
+                        question.CorrectAnswer = fullAnswer;
 
-                        question.IsValid = validCount && oneCorrect;
-                        if (question.IsValid) question.Description += "✅ OK";
-                    }
-                    else if (answers.Count > 1 && answers.All(a => trueFalseAnswer.IsMatch(a)))
-                    {
-                        question.QuestionType = QuestionType.TrueFalse;
-                        question.Level = Level.None;
-                        question.IsValid = answers.Count == 4;
-
-                        if (!question.IsValid)
-                            question.Description += "⚠️ Câu đúng/sai phải có đúng 4 ý a), b), c), d). ";
-                        else
-                            question.Description += "✅ OK";
-                    }
-                    else if (answers.Count == 1 && mcAnswerRegex.IsMatch(answers[0]))
-                    {
-                        string content = answers[0].Substring(2).Trim();
-                        question.CorrectAnswer = content;
-
-                        if (string.IsNullOrWhiteSpace(content))
+                        if (string.IsNullOrWhiteSpace(fullAnswer))
                         {
                             question.QuestionType = QuestionType.ShortAnswer;
                             question.Description += "⚠️ Chưa có nội dung đáp án. ";
                             question.IsValid = false;
                         }
-                        else if (content.Length <= 4)
+                        else if (fullAnswer.Length <= 4)
                         {
                             question.QuestionType = QuestionType.ShortAnswer;
                             question.IsValid = true;
@@ -938,39 +955,29 @@ namespace Desktop.Services.Implementations
                         else
                         {
                             question.QuestionType = QuestionType.Essay;
-
-                            var extractedAnswers = new List<OpenXmlElement>();
-                            while (j < paragraphs.Count && !questionHeader.IsMatch(paragraphs[j].InnerText.Trim()))
-                            {
-                                extractedAnswers.Add(paragraphs[j]);
-                                j++;
-                            }
-
-                            // Kiểm tra danh sách extractedAnswers có phần tử nào không
-                            if (extractedAnswers.Any())
-                            {
-                                question.CorrectAnswer = string.Join("\n", extractedAnswers.Select(e => e.InnerText.Trim()));
-
-                                // Đảm bảo rằng dữ liệu không bị rỗng
-                                if (string.IsNullOrWhiteSpace(question.CorrectAnswer))
-                                {
-                                    question.CorrectAnswer = "⚠️ Nội dung trống, kiểm tra lại cách lấy dữ liệu!";
-                                }
-                            }
-                            else
-                            {
-                                question.CorrectAnswer = "⚠️ Không tìm thấy nội dung đáp án!";
-                            }
-
                             question.IsValid = true;
                             question.Description += "✅ OK";
                         }
                     }
-                    else if (answers.Count == 1)
+                    else if (answers.Count == 4 && answers.All(a => mcAnswerRegex.IsMatch(a)))
                     {
-                        question.QuestionType = QuestionType.Unknown;
-                        question.Description += "⚠️ Đáp án không đúng định dạng bắt đầu bằng 'A.', 'B.', ... ";
-                        question.IsValid = false;
+                        question.QuestionType = QuestionType.MultipleChoice;
+                        question.CorrectAnswer = string.Join(" | ", correctAnswers);
+
+                        bool oneCorrect = correctAnswers.Count == 1;
+                        if (!oneCorrect)
+                            question.Description += "⚠️ Phải có đúng 1 đáp án đúng. ";
+
+                        question.IsValid = oneCorrect;
+                        if (question.IsValid) question.Description += "✅ OK";
+                    }
+                    else if (answers.Count == 4 && answers.All(a => trueFalseAnswer.IsMatch(a)))
+                    {
+                        question.QuestionType = QuestionType.TrueFalse;
+                        question.Level = Level.None;
+                        question.CorrectAnswer = string.Join(" | ", correctAnswers);
+                        question.IsValid = true;
+                        question.Description += "✅ OK";
                     }
                     else
                     {
@@ -985,6 +992,85 @@ namespace Desktop.Services.Implementations
 
                 return questions;
             });
+        }
+
+        public async Task<string> ExtractTextAsync(string filePath)
+        {
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException("Không tìm thấy file", filePath);
+
+            return await Task.Run(() =>
+            {
+                using var doc = WordprocessingDocument.Open(filePath, false);
+                var body = doc.MainDocumentPart!.Document.Body;
+
+                var lines = new List<string>();
+
+                foreach (var para in body!.Elements<Paragraph>())
+                {
+                    string text = para.InnerText.Trim();
+                    if (string.IsNullOrWhiteSpace(text)) continue;
+
+                    // Nhiều lựa chọn (A-D)
+                    if (Regex.IsMatch(text, @"^[A-D][\.:]"))
+                    {
+                        bool underlined = IsFirstTwoCharsUnderlined(para);
+                        if (underlined)
+                            text += " (Đúng)";
+                    }
+                    // Đúng/Sai (a-d)
+                    else if (Regex.IsMatch(text, @"^[a-d][\):]"))
+                    {
+                        bool underlined = IsFirstTwoCharsUnderlined(para);
+                        text += underlined ? " (Đúng)" : " (Sai)";
+                    }
+                    // Trả lời ngắn (A. "??", <= 4 ký tự)
+                    else if (Regex.IsMatch(text, @"^[A-D][\.:]\s*[""']?\w{1,4}[""']?$"))
+                    {
+                        // Giữ nguyên
+                    }
+                    // Tự luận (A. "*", > 4 ký tự)
+                    else if (Regex.IsMatch(text, @"^[A-D][\.:]\s*.+$"))
+                    {
+                        // Giữ nguyên
+                    }
+
+                    lines.Add(text);
+                }
+
+                return string.Join(Environment.NewLine, lines);
+            });
+        }
+
+        /// Kiểm tra underline trên 2 ký tự đầu (chữ + dấu)
+        private static bool IsFirstTwoCharsUnderlined(Paragraph para)
+        {
+            var runs = para.Elements<Run>().ToList();
+            int captured = 0;
+            bool underlined = false;
+
+            foreach (var run in runs)
+            {
+                string runText = string.Concat(run.Elements<Text>().Select(t => t.Text));
+                if (string.IsNullOrEmpty(runText)) continue;
+
+                foreach (char ch in runText)
+                {
+                    if (captured < 2)
+                    {
+                        if (!char.IsWhiteSpace(ch))
+                        {
+                            captured++;
+                            if (run.RunProperties?.Underline != null)
+                                underlined = true;
+                        }
+                    }
+                }
+
+                if (captured >= 2) break;
+            }
+
+            return underlined;
         }
 
         private async Task AddEndNotesAsync(WordprocessingDocument doc)
@@ -1089,6 +1175,7 @@ namespace Desktop.Services.Implementations
                     { "[MONTHI]", mixInfo.Subject ?? string.Empty },
                     { "[DONVICAPTREN]", mixInfo.SuperiorUnit ?? string.Empty },
                     { "[DONVI]", mixInfo.Unit ?? string.Empty },
+                    { "[KHOILOP]", mixInfo.Grade ?? string.Empty },
                     { "[MaDe]", code },
                     { "[ThoiGian]", mixInfo.Time ?? string.Empty }
                 });
@@ -1384,11 +1471,16 @@ namespace Desktop.Services.Implementations
         private void FormatParagraph(Paragraph para)
         {
             para.ParagraphProperties ??= new ParagraphProperties();
+
+            // Xóa spacing cũ để tránh Word giữ lại
+            para.ParagraphProperties.RemoveAllChildren<SpacingBetweenLines>();
+
+            // Spacing: Before = 0pt, After = 0pt, Line = 1.2 dòng
             para.ParagraphProperties.SpacingBetweenLines = new SpacingBetweenLines
             {
-                Before = "0",
-                After = "0",
-                Line = "288", // 1.2 dòng = 240 * 1.2 = 288 twips
+                Before = "0",   // 0pt
+                After = "0",    // 0pt
+                Line = "288",   // 1.2 dòng (240 * 1.2)
                 LineRule = LineSpacingRuleValues.Auto
             };
 
@@ -1511,6 +1603,8 @@ namespace Desktop.Services.Implementations
             for (int i = 0; i < shuffled.Count && i < labels.Length; i++)
             {
                 var group = shuffled[i];
+
+                // Xác định đáp án đúng
                 bool isCorrect = group.Any(el =>
                     el.Descendants<Run>().Any(r => r.RunProperties?.Underline?.Val != null &&
                                                    r.RunProperties.Underline.Val != UnderlineValues.None));
@@ -1518,29 +1612,55 @@ namespace Desktop.Services.Implementations
                     correctAnswer = labels[i].Substring(0, 1);
 
                 var firstPara = group.OfType<Paragraph>().FirstOrDefault();
-                //if (firstPara != null)
-                //{
-                //    var firstTextRun = firstPara.Elements<Run>().FirstOrDefault();
-                //    var firstText = firstTextRun?.GetFirstChild<Text>();
-                //    if (firstText != null)
-                //        firstText.Text = Regex.Replace(firstText.Text, @"^[A-D]\.", labels[i]);
-                //}
                 if (firstPara != null)
                 {
-                    var firstRun = firstPara.Elements<Run>().FirstOrDefault();
-                    if (firstRun != null)
-                    {
-                        firstPara.RemoveChild(firstRun); // Xóa run cũ
+                    // Lưu lại các phần tử không phải Run (hình ảnh, công thức...)
+                    var extraElements = firstPara.Elements().Where(e => !(e is Run)).Select(e => e.CloneNode(true)).ToList();
 
-                        var boldRun = new Run(
-                            new RunProperties(new Bold()),
-                            new Text(labels[i]) { Space = SpaceProcessingModeValues.Preserve }
-                        );
-                        firstPara.PrependChild(boldRun); // Thêm run mới in đậm
+                    // Lưu lại các Run chứa hình ảnh hoặc không chứa Text
+                    var imageRuns = firstPara.Elements<Run>()
+                        .Where(r => r.Descendants<Drawing>().Any() || !r.Elements<Text>().Any())
+                        .Select(r => r.CloneNode(true)).ToList();
+
+                    // Lấy nội dung văn bản từ các Run có Text
+                    var textRuns = firstPara.Elements<Run>()
+                        .Where(r => r.Elements<Text>().Any())
+                        .ToList();
+
+                    string fullText = string.Concat(textRuns.SelectMany(r => r.Elements<Text>().Select(t => t.Text))).Trim();
+
+                    // Tách nhãn và nội dung
+                    var match = Regex.Match(fullText, @"^([A-D]\.)\s*(.*)", RegexOptions.IgnoreCase);
+                    string label = match.Success ? match.Groups[1].Value : labels[i];
+                    string content = match.Success ? match.Groups[2].Value : fullText;
+
+                    // Xóa toàn bộ nội dung cũ
+                    firstPara.RemoveAllChildren<Run>();
+
+                    // Tạo lại nhãn mới (in đậm) + nội dung
+                    var labelRun = new Run(
+                        new RunProperties(new Bold()),
+                        new Text($"{labels[i]} ") { Space = SpaceProcessingModeValues.Preserve }
+                    );
+                    var contentRun = new Run(new Text(content.Trim()) { Space = SpaceProcessingModeValues.Preserve });
+
+                    firstPara.Append(labelRun);
+                    firstPara.Append(contentRun);
+
+                    // Thêm lại các Run chứa hình ảnh hoặc không có Text
+                    foreach (var run in imageRuns)
+                    {
+                        firstPara.Append(run);
+                    }
+
+                    // Thêm lại các phần tử ngoài Run (hình ảnh, công thức, v.v.)
+                    foreach (var extra in extraElements)
+                    {
+                        firstPara.Append(extra);
                     }
                 }
-
             }
+
             return correctAnswer;
         }
 

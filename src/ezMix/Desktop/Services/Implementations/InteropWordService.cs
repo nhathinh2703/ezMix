@@ -1,28 +1,18 @@
 ﻿using Desktop.Helpers;
 using Desktop.Services.Interfaces;
 using Microsoft.Office.Interop.Word;
-using System.IO;
+using MTGetEquationAddin;
 using System.Runtime.InteropServices;
+using System.Text;
 using Application = Microsoft.Office.Interop.Word.Application;
-using Range = Microsoft.Office.Interop.Word.Range;
 using Task = System.Threading.Tasks.Task;
 using Word = Microsoft.Office.Interop.Word;
-using Office = Microsoft.Office.Core;
 
 namespace Desktop.Services.Implementations
 {
     public class InteropWordService : IInteropWordService
     {
         private Application? _wordApp;
-
-        private async Task<Application> GetWordAppAsync()
-        {
-            if (_wordApp == null)
-            {
-                _wordApp = await Task.Run(() => new Application());
-            }
-            return _wordApp;
-        }
 
         public async Task<Document> OpenDocumentAsync(string filePath, bool visible)
         {
@@ -40,20 +30,74 @@ namespace Desktop.Services.Implementations
             }
             catch (Exception ex)
             {
-                MessageHelper.Error($"Lỗi khi lưu tài liệu: {ex.Message}");
+                MessageHelper.Error($"Lỗi xảy ra ở hàm SaveDocumentAsync: {ex.Message}");
             }
         }
 
-        public async Task CloseDocumentAsync(_Document document)
+        // Đóng một document
+        public async Task CloseDocumentAsync(Word._Document doc)
         {
-            if (document != null)
+            await Task.Run(() =>
             {
-                await Task.Run(() =>
+                try
                 {
-                    document.Close(false);
-                    ReleaseComObject(document);
-                });
-            }
+                    doc.Close(false); // false = không lưu
+                }
+                catch (Exception ex)
+                {
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm CloseDocumentAsync: {ex.Message}");
+                }
+                finally
+                {
+                    ReleaseComObject(doc); // dùng hàm Release wrapper của bạn
+                    doc = null!;
+                }
+            });
+        }
+
+        // Đóng tất cả document đang mở
+        public async Task CloseAllDocumentsAsync()
+        {
+            if (_wordApp == null) return;
+
+            await Task.Run(async () =>
+            {
+                try
+                {
+                    for (int i = _wordApp.Documents.Count; i >= 1; i--)
+                    {
+                        var doc = _wordApp.Documents[i];
+                        await CloseDocumentAsync(doc);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm CloseAllDocumentsAsync: {ex.Message}");
+                }
+            });
+        }
+
+        // Thoát Word Application
+        public async Task QuitWordAppAsync()
+        {
+            if (_wordApp == null) return;
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    _wordApp.Quit();
+                }
+                catch (Exception ex)
+                {
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm QuitWordAppAsync: {ex.Message}");
+                }
+                finally
+                {
+                    ReleaseComObject(_wordApp);
+                    _wordApp = null;
+                }
+            });
         }
 
         public async Task FormatDocumentAsync(_Document document)
@@ -62,166 +106,162 @@ namespace Desktop.Services.Implementations
             {
                 try
                 {
-                    float CmToPt(float cm) => (float)(cm * 28.35); // Chuyển đổi cm → pt
-
-                    // ==== 1. Định dạng ký tự qua style "Normal"
                     var normalStyle = document.Styles["Normal"];
-                    var font = normalStyle.Font;
-                    font.Name = Constants.FONT_NAME;
-                    font.Size = Constants.FONT_SIZE;
+                    FormatNormalStyle(normalStyle);
 
-                    // ==== 2. Định dạng đoạn văn qua style "Normal"
-                    var paraFormat = normalStyle.ParagraphFormat;
-                    paraFormat.Alignment = Word.WdParagraphAlignment.wdAlignParagraphJustify;
-                    paraFormat.OutlineLevel = WdOutlineLevel.wdOutlineLevelBodyText;
-                    paraFormat.LeftIndent = 0f;
-                    paraFormat.CharacterUnitLeftIndent = 0f;
-                    paraFormat.RightIndent = 0f;
-                    paraFormat.SpaceBefore = 0f;
-                    paraFormat.SpaceAfter = 0f;
-                    paraFormat.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceSingle;
-                    paraFormat.FirstLineIndent = 0f;
-                    paraFormat.HangingPunctuation = 0;
-                    paraFormat.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceMultiple; // Kiểu khoảng cách dòng: Multiple
-                    paraFormat.LineSpacing = (float)(1.2 * 12); // 1.2 x 12pt = 14.4pt
-
-                    // ==== 3. Định dạng trang
                     var setup = document.PageSetup;
-                    setup.PaperSize = Word.WdPaperSize.wdPaperA4;
-                    setup.Orientation = Word.WdOrientation.wdOrientPortrait;
-                    setup.TopMargin = CmToPt(1.27f);
-                    setup.BottomMargin = CmToPt(1.27f);
-                    setup.LeftMargin = CmToPt(1.27f);
-                    setup.RightMargin = CmToPt(1.27f);
-
-                    // Điều chỉnh khoảng cách Header và Footer từ lề
-                    setup.HeaderDistance = CmToPt(1.27f);
-                    setup.FooterDistance = CmToPt(1.27f);
+                    FormatPageSetup(setup);
                 }
                 catch (Exception ex)
                 {
-                    MessageHelper.Error(ex);
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm FormatDocumentAsync: {ex.Message}");
                 }
             });
         }
 
-        public async Task FindAndReplaceAsync(_Document document, string findText, string replaceWithText, bool matchCase = false, bool matchWholeWord = false, bool matchWildcards = false)
+        public async Task ReplaceAsync(
+            _Document document, 
+            Dictionary<string, string> replacements, 
+            bool matchCase = false, 
+            bool matchWholeWord = false, 
+            bool matchWildcards = false)
         {
             await Task.Run(() =>
             {
-                Word.Find findObject = null!;
                 try
                 {
-                    findObject = document.Content.Find;
-                    findObject.ClearFormatting();
-                    findObject.Text = findText;
-                    findObject.Replacement.ClearFormatting();
-                    findObject.Replacement.Text = replaceWithText;
-
-                    findObject.MatchCase = matchCase;
-                    findObject.MatchWholeWord = matchWholeWord;
-                    findObject.MatchWildcards = matchWildcards;
-
+                    var find = document.Content.Find;
                     object replaceAll = Word.WdReplace.wdReplaceAll;
-                    object missing = System.Type.Missing;
+                    object missing = Type.Missing;
 
-                    findObject.Execute(ref missing, ref missing, ref missing, ref missing, ref missing,
-                        ref missing, ref missing, ref missing, ref missing, ref missing,
-                        ref replaceAll, ref missing, ref missing, ref missing, ref missing);
-                }
-                catch (Exception ex)
-                {
-                    MessageHelper.Error(ex);
-                }
-                finally
-                {
-                    ReleaseComObject(findObject);
-                }
-            });
-
-        }
-
-        public async Task FindAndReplaceAsync(_Document document, Dictionary<string, string> replacements, bool matchCase = false, bool matchWholeWord = false, bool matchWildcards = false)
-        {
-            await Task.Run(() =>
-            {
-                Word.Find findObject = null!;
-                try
-                {
-                    findObject = document.Content.Find;
-
-                    foreach (KeyValuePair<string, string> kvp in replacements)
+                    foreach (var kvp in replacements)
                     {
-                        findObject.ClearFormatting();
-                        findObject.Text = kvp.Key;
-                        findObject.Replacement.ClearFormatting();
-                        findObject.Replacement.Text = kvp.Value;
+                        find.ClearFormatting();
+                        find.Text = kvp.Key;
+                        find.Replacement.ClearFormatting();
+                        find.Replacement.Text = kvp.Value;
 
-                        findObject.MatchCase = matchCase;
-                        findObject.MatchWholeWord = matchWholeWord;
-                        findObject.MatchWildcards = matchWildcards;
+                        find.MatchCase = matchCase;
+                        find.MatchWholeWord = matchWholeWord;
+                        find.MatchWildcards = matchWildcards;
 
-                        object replaceAll = Word.WdReplace.wdReplaceAll;
-                        object missing = Type.Missing;
-
-                        findObject.Execute(ref missing, ref missing, ref missing, ref missing, ref missing,
+                        find.Execute(
+                            ref missing, ref missing, ref missing, ref missing, ref missing,
                             ref missing, ref missing, ref missing, ref missing, ref missing,
                             ref replaceAll, ref missing, ref missing, ref missing, ref missing);
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageHelper.Error(ex);
-                }
-                finally
-                {
-                    ReleaseComObject(findObject);
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm ReplaceAsync: {ex.Message}");
                 }
             });
-
         }
 
-        public async Task FindAndReplaceFirstAsync(Paragraph paragraph, string findText, string replaceWithText, bool matchCase = false, bool matchWholeWord = false, bool matchWildcards = false)
+        public async Task ReplaceFirstAsync(
+            Paragraph paragraph, 
+            string findText, 
+            string replaceWithText, 
+            bool matchCase = false, 
+            bool matchWholeWord = false, 
+            bool matchWildcards = false)
         {
             await Task.Run(() =>
             {
-                Word.Find findObject = null!;
                 try
                 {
-                    Word.Range range = paragraph.Range;
-                    findObject = range.Find;
-                    findObject.ClearFormatting();
-                    findObject.Text = findText;
-                    findObject.Replacement.ClearFormatting();
-                    findObject.Replacement.Text = replaceWithText;
+                    var find = paragraph.Range.Find;
+                    find.ClearFormatting();
+                    find.Text = findText;
+                    find.Replacement.ClearFormatting();
+                    find.Replacement.Text = replaceWithText;
 
-                    findObject.MatchCase = matchCase;
-                    findObject.MatchWholeWord = matchWholeWord;
-                    findObject.MatchWildcards = matchWildcards;
+                    find.MatchCase = matchCase;
+                    find.MatchWholeWord = matchWholeWord;
+                    find.MatchWildcards = matchWildcards;
 
                     object replaceOne = Word.WdReplace.wdReplaceOne;
-                    object missing = System.Type.Missing;
+                    object missing = Type.Missing;
 
-                    findObject.Execute(ref missing, ref missing, ref missing, ref missing, ref missing,
+                    find.Execute(
+                        ref missing, ref missing, ref missing, ref missing, ref missing,
                         ref missing, ref missing, ref missing, ref missing, ref missing,
                         ref replaceOne, ref missing, ref missing, ref missing, ref missing);
                 }
                 catch (Exception ex)
                 {
-                    MessageHelper.Error(ex);
-                }
-                finally
-                {
-                    ReleaseComObject(findObject);
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm ReplaceFirstAsync: {ex.Message}");
                 }
             });
         }
 
-        public async Task FindAndReplaceInSectionAsync(_Document document, int sectionIndex, string findText, string replaceWithText, bool matchCase = false, bool matchWholeWord = false, bool matchWildcards = false)
+        public async Task ReplaceUntilDoneAsync(
+            _Document document,
+            Dictionary<string, string> replacements,
+            bool matchCase = false,
+            bool matchWholeWord = false,
+            bool matchWildcards = false,
+            int maxIterations = 100)
         {
             await Task.Run(() =>
             {
-                Word.Find findObject = null!;
+                try
+                {
+                    object missing = Type.Missing;
+                    object replaceAll = Word.WdReplace.wdReplaceAll;
+
+                    foreach (var pair in replacements)
+                    {
+                        string findText = pair.Key;
+                        string replaceWithText = pair.Value;
+
+                        int count = 0;
+                        string previousText = document.Content.Text;
+
+                        while (count < maxIterations)
+                        {
+                            var find = document.Content.Find;
+                            find.ClearFormatting();
+                            find.Text = findText;
+                            find.Replacement.ClearFormatting();
+                            find.Replacement.Text = replaceWithText;
+
+                            find.MatchCase = matchCase;
+                            find.MatchWholeWord = matchWholeWord;
+                            find.MatchWildcards = matchWildcards;
+
+                            find.Execute(
+                                ref missing, ref missing, ref missing, ref missing, ref missing,
+                                ref missing, ref missing, ref missing, ref missing, ref missing,
+                                ref replaceAll, ref missing, ref missing, ref missing, ref missing);
+
+                            string currentText = document.Content.Text;
+                            if (currentText == previousText)
+                                break;
+
+                            previousText = currentText;
+                            count++;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm ReplaceUntilDoneAsync: {ex.Message}");
+                }
+            });
+        }
+
+        public async Task ReplaceInSectionAsync(
+            _Document document,
+            int sectionIndex,
+            string findText,
+            string replaceWithText,
+            bool matchCase = false,
+            bool matchWholeWord = false,
+            bool matchWildcards = false)
+        {
+            await Task.Run(() =>
+            {
                 try
                 {
                     if (sectionIndex < 1 || sectionIndex > document.Sections.Count)
@@ -230,81 +270,109 @@ namespace Desktop.Services.Implementations
                         return;
                     }
 
-                    Word.Section section = document.Sections[sectionIndex];
-                    findObject = section.Range.Find;
+                    var find = document.Sections[sectionIndex].Range.Find;
+                    find.ClearFormatting();
+                    find.Text = findText;
+                    find.Replacement.ClearFormatting();
+                    find.Replacement.Text = replaceWithText;
 
-                    findObject.ClearFormatting();
-                    findObject.Text = findText;
-                    findObject.Replacement.ClearFormatting();
-                    findObject.Replacement.Text = replaceWithText;
-
-                    findObject.MatchCase = matchCase;
-                    findObject.MatchWholeWord = matchWholeWord;
-                    findObject.MatchWildcards = matchWildcards;
+                    find.MatchCase = matchCase;
+                    find.MatchWholeWord = matchWholeWord;
+                    find.MatchWildcards = matchWildcards;
 
                     object replaceAll = Word.WdReplace.wdReplaceAll;
                     object missing = Type.Missing;
 
-                    findObject.Execute(ref missing, ref missing, ref missing, ref missing, ref missing,
+                    find.Execute(
+                        ref missing, ref missing, ref missing, ref missing, ref missing,
                         ref missing, ref missing, ref missing, ref missing, ref missing,
                         ref replaceAll, ref missing, ref missing, ref missing, ref missing);
                 }
                 catch (Exception ex)
                 {
-                    MessageHelper.Error(ex);
-                }
-                finally
-                {
-                    ReleaseComObject(findObject);
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm ReplaceInSectionAsync: {ex.Message}");
                 }
             });
-
         }
 
-        public async Task FindAndReplaceRedToUnderlinedAsync(_Document document)
+        public async Task ReplaceRedTextWithUnderlineAsync(_Document document)
         {
             await Task.Run(() =>
             {
-                Word.Find findObject = null!;
                 try
                 {
-                    Word.Range range = document.Content;
-                    findObject = range.Find;
+                    var find = document.Content.Find;
 
-                    findObject.ClearFormatting();
-                    findObject.Font.Color = Word.WdColor.wdColorRed;
-                    findObject.Text = "";
+                    find.ClearFormatting();
+                    find.Font.Color = Word.WdColor.wdColorRed;
+                    find.Text = "";
 
-                    findObject.Replacement.ClearFormatting();
-                    findObject.Replacement.Font.Color = Word.WdColor.wdColorBlack;
-                    findObject.Replacement.Font.Underline = Word.WdUnderline.wdUnderlineSingle;
-                    findObject.Replacement.Text = "^&";
+                    find.Replacement.ClearFormatting();
+                    find.Replacement.Font.Color = Word.WdColor.wdColorBlack;
+                    find.Replacement.Font.Underline = Word.WdUnderline.wdUnderlineSingle;
+                    find.Replacement.Text = "^&"; // Giữ nguyên nội dung gốc
 
                     object replaceAll = Word.WdReplace.wdReplaceAll;
-                    object missing = System.Type.Missing;
+                    object missing = Type.Missing;
                     object format = true;
 
-                    findObject.Execute(ref missing, ref missing, ref missing, ref missing, ref missing,
+                    find.Execute(
+                        ref missing, ref missing, ref missing, ref missing, ref missing,
                         ref missing, ref missing, ref missing, ref missing, ref missing,
                         ref replaceAll, ref missing, ref format, ref missing, ref missing);
                 }
                 catch (Exception ex)
                 {
-                    MessageHelper.Error(ex);
-                }
-                finally
-                {
-                    ReleaseComObject(findObject);
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm ReplaceRedTextWithUnderlineAsync: {ex.Message}");
                 }
             });
         }
 
-        public async Task FindAndReplaceInRangeAsync(_Document document, int start, int end, string findText, string replaceWithText, bool matchCase = false, bool matchWholeWord = false, bool matchWildcards = false)
+        public async Task ReplaceUnderlineWithRedTextAsync(_Document document)
         {
             await Task.Run(() =>
             {
-                Word.Find findObject = null!;
-                Word.Range rangeObject = null!;
+                try
+                {
+                    var find = document.Content.Find;
+
+                    find.ClearFormatting();
+                    find.Font.Underline = Word.WdUnderline.wdUnderlineSingle;
+                    find.Text = "";
+
+                    find.Replacement.ClearFormatting();
+                    find.Replacement.Font.Underline = Word.WdUnderline.wdUnderlineNone;
+                    find.Replacement.Font.Color = Word.WdColor.wdColorRed;
+                    find.Replacement.Text = "^&"; // Giữ nguyên nội dung gốc
+
+                    object replaceAll = Word.WdReplace.wdReplaceAll;
+                    object missing = Type.Missing;
+                    object format = true;
+
+                    find.Execute(
+                        ref missing, ref missing, ref missing, ref missing, ref missing,
+                        ref missing, ref missing, ref missing, ref missing, ref missing,
+                        ref replaceAll, ref missing, ref format, ref missing, ref missing);
+                }
+                catch (Exception ex)
+                {
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm ReplaceUnderlineWithRedTextAsync: {ex.Message}");
+                }
+            });
+        }
+
+        public async Task ReplaceInRangeAsync(
+            _Document document,
+            int start,
+            int end,
+            string findText,
+            string replaceWithText,
+            bool matchCase = false,
+            bool matchWholeWord = false,
+            bool matchWildcards = false)
+        {
+            await Task.Run(() =>
+            {
                 try
                 {
                     if (start < 0 || end > document.Content.End || start > end)
@@ -313,33 +381,29 @@ namespace Desktop.Services.Implementations
                         return;
                     }
 
-                    rangeObject = document.Range(start, end);
-                    findObject = rangeObject.Find;
+                    var range = document.Range(start, end);
+                    var find = range.Find;
 
-                    findObject.ClearFormatting();
-                    findObject.Text = findText;
-                    findObject.Replacement.ClearFormatting();
-                    findObject.Replacement.Text = replaceWithText;
+                    find.ClearFormatting();
+                    find.Text = findText;
+                    find.Replacement.ClearFormatting();
+                    find.Replacement.Text = replaceWithText;
 
-                    findObject.MatchCase = matchCase;
-                    findObject.MatchWholeWord = matchWholeWord;
-                    findObject.MatchWildcards = matchWildcards;
+                    find.MatchCase = matchCase;
+                    find.MatchWholeWord = matchWholeWord;
+                    find.MatchWildcards = matchWildcards;
 
                     object replaceAll = Word.WdReplace.wdReplaceAll;
                     object missing = Type.Missing;
 
-                    findObject.Execute(ref missing, ref missing, ref missing, ref missing, ref missing,
+                    find.Execute(
+                        ref missing, ref missing, ref missing, ref missing, ref missing,
                         ref missing, ref missing, ref missing, ref missing, ref missing,
                         ref replaceAll, ref missing, ref missing, ref missing, ref missing);
                 }
                 catch (Exception ex)
                 {
-                    MessageHelper.Error(ex);
-                }
-                finally
-                {
-                    ReleaseComObject(findObject);
-                    ReleaseComObject(rangeObject);
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm ReplaceInRangeAsync: {ex.Message}");
                 }
             });
         }
@@ -350,15 +414,15 @@ namespace Desktop.Services.Implementations
             {
                 try
                 {
-                    Word.Range rng = document.Content;
-                    if (rng != null && rng.ListFormat.ListType != Word.WdListType.wdListNoNumbering)
+                    var range = document.Content;
+                    if (range.ListFormat.ListType != Word.WdListType.wdListNoNumbering)
                     {
-                        rng.ListFormat.ConvertNumbersToText();
+                        range.ListFormat.ConvertNumbersToText();
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageHelper.Error(ex);
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm ConvertListFormatToTextAsync: {ex.Message}");
                 }
             });
         }
@@ -376,10 +440,7 @@ namespace Desktop.Services.Implementations
                             if (header.Exists)
                                 header.Range.Delete();
                         }
-                    }
 
-                    foreach (Word.Section section in document.Sections)
-                    {
                         foreach (Word.HeaderFooter footer in section.Footers)
                         {
                             if (footer.Exists)
@@ -389,7 +450,7 @@ namespace Desktop.Services.Implementations
                 }
                 catch (Exception ex)
                 {
-                    MessageHelper.Error(ex);
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm DeleteAllHeadersAndFootersAsync: {ex.Message}");
                 }
             });
         }
@@ -402,32 +463,33 @@ namespace Desktop.Services.Implementations
 
                 foreach (Word.Paragraph paragraph in document.Paragraphs)
                 {
-                    try
+                    string text = paragraph.Range.Text.Trim();
+
+                    if (Constants.QuestionHeaderRegex.IsMatch(text))
                     {
-                        string str = paragraph.Range.Text.Trim();
-
-                        if (Constants.QuestionHeaderRegex.IsMatch(str))
-                        {
-                            questionIndex++;
-                            answerIndex = 0;
-                        }
-
-                        if (str.Contains(Constants.ANSWER_TEMPLATE) || Constants.MultipleChoiceAnswerRegex.IsMatch(str))
-                        {
-                            string label = GenerateLabel(answerIndex);
-                            await FindAndReplaceFirstAsync(paragraph, Constants.ANSWER_TEMPLATE, $"{label} ");
-                            answerIndex++;
-                        }
+                        questionIndex++;
+                        answerIndex = 0;
                     }
-                    finally
+
+                    if (text.Contains(Constants.ANSWER_TEMPLATE) || Constants.MultipleChoiceAnswerRegex.IsMatch(text))
                     {
-                        ReleaseComObject(paragraph);
+                        string label = GenerateLabel(answerIndex); // A, B, C, D...
+                        await ReplaceFirstAsync(paragraph, Constants.ANSWER_TEMPLATE, $"{label}. ");
+                        answerIndex++;
+                    }
+
+                    // Nếu đáp án đang là a) → thay bằng nhãn đúng theo thứ tự
+                    if (text.StartsWith("a)"))
+                    {
+                        string label = GenerateLabel(answerIndex).ToLower(); // a), b), c), d)
+                        await ReplaceFirstAsync(paragraph, "a)", $"{label}) ");
+                        answerIndex++;
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageHelper.Error(ex);
+                MessageHelper.Error($"Lỗi xảy ra ở hàm SetAnswersToABCDAsync: {ex.Message}");
             }
         }
 
@@ -435,27 +497,21 @@ namespace Desktop.Services.Implementations
         {
             try
             {
-                int i = 0;
+                int questionIndex = 0;
                 foreach (Word.Paragraph paragraph in document.Paragraphs)
                 {
-                    try
+                    string text = paragraph.Range.Text.Trim();
+
+                    if (await IsQuestionAsync(text))
                     {
-                        string str = paragraph.Range.Text.Trim();
-                        if (await IsQuestionAsync(str))
-                        {
-                            i++;
-                            await FindAndReplaceFirstAsync(paragraph, Constants.QUESTION_TEMPLATE, $"Câu {i}: ");
-                        }
-                    }
-                    finally
-                    {
-                        ReleaseComObject(paragraph);
+                        questionIndex++;
+                        await ReplaceFirstAsync(paragraph, Constants.QUESTION_TEMPLATE, $"Câu {questionIndex}: ");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageHelper.Error(ex);
+                MessageHelper.Error($"Lỗi xảy ra ở hàm SetQuestionsToNumberAsync: {ex.Message}");
             }
         }
 
@@ -466,330 +522,317 @@ namespace Desktop.Services.Implementations
                 int soCauHoi = 0;
                 foreach (Word.Paragraph paragraph in document.Paragraphs)
                 {
-                    try
+                    string str = paragraph.Range.Text;
+                    if (await IsQuestionAsync(str))
                     {
-                        string str = paragraph.Range.Text;
-                        if (await IsQuestionAsync(str))
+                        soCauHoi++;
+                        if (str.StartsWith($"Câu {soCauHoi}:"))
                         {
-                            soCauHoi++;
-                            if (str.StartsWith(string.Format("Câu {0}:", soCauHoi)))
-                            {
-                                paragraph.Range.Characters[1].Font.Bold = paragraph.Range.Characters[2].Font.Bold = paragraph.Range.Characters[3].Font.Bold =
-                                paragraph.Range.Characters[4].Font.Bold = paragraph.Range.Characters[5].Font.Bold = paragraph.Range.Characters[6].Font.Bold = 1;
-                                if (soCauHoi >= 10)
-                                {
-                                    paragraph.Range.Characters[7].Font.Bold = 1;
-                                }
-                                if (soCauHoi >= 100)
-                                {
-                                    paragraph.Range.Characters[8].Font.Bold = 1;
-                                }
-                                if (soCauHoi >= 1000)
-                                {
-                                    paragraph.Range.Characters[9].Font.Bold = 1;
-                                }
-                                if (soCauHoi >= 10000)
-                                {
-                                    paragraph.Range.Characters[10].Font.Bold = 1;
-                                }
-                            }
-                            else if (str.StartsWith("<#>") || str.StartsWith("<G>") || str.StartsWith("<g>"))
-                            {
-                                paragraph.Range.Characters[1].Font.Bold = paragraph.Range.Characters[2].Font.Bold = paragraph.Range.Characters[3].Font.Bold = 1;
-                            }
-                            else if (str.StartsWith("<NB>") || str.StartsWith("<TH>") || str.StartsWith("<VD>"))
-                            {
-                                paragraph.Range.Characters[1].Font.Bold = paragraph.Range.Characters[2].Font.Bold =
-                                    paragraph.Range.Characters[3].Font.Bold = paragraph.Range.Characters[4].Font.Bold = 1;
-                            }
-                            else if (str.StartsWith("<VDC>"))
-                            {
-                                paragraph.Range.Characters[1].Font.Bold = paragraph.Range.Characters[2].Font.Bold =
-                                    paragraph.Range.Characters[3].Font.Bold = paragraph.Range.Characters[4].Font.Bold = paragraph.Range.Characters[5].Font.Bold = 1;
-                            }
-                            else if (str.StartsWith("#"))
-                            {
-                                paragraph.Range.Characters[1].Font.Bold = 1;
-                            }
-                            else if (str.StartsWith("[<br>]"))
-                            {
-                                paragraph.Range.Characters[1].Font.Bold = paragraph.Range.Characters[2].Font.Bold = paragraph.Range.Characters[3].Font.Bold =
-                                paragraph.Range.Characters[4].Font.Bold = paragraph.Range.Characters[5].Font.Bold = paragraph.Range.Characters[6].Font.Bold = 1;
-                            }
+                            int boldCount = $"Câu {soCauHoi}:".Length;
+                            BoldCharacters(paragraph, boldCount);
                         }
-                        else if (str.StartsWith("A.") || str.StartsWith("B.") || str.StartsWith("C.") || str.StartsWith("D.") ||
-                                 str.StartsWith("a)") || str.StartsWith("b)") || str.StartsWith("c)") || str.StartsWith("d)"))
+                        else if (StartsWithAny(str, "<#>", "<G>", "<g>"))
                         {
-                            if (paragraph.Range.Characters[1].Font.Underline == WdUnderline.wdUnderlineSingle)
-                            {
-                                paragraph.Range.Font.Color = WdColor.wdColorBlack;
-                                paragraph.Range.Characters[1].Font.Underline = paragraph.Range.Characters[2].Font.Underline = WdUnderline.wdUnderlineSingle;
-                                paragraph.Range.Characters[1].Font.Bold = paragraph.Range.Characters[2].Font.Bold = 1;
-                                paragraph.Range.Characters[3].Font.Underline = WdUnderline.wdUnderlineNone;
-                                paragraph.Range.Characters[3].Font.Bold = 0;
-                            }
-                            else
-                            {
-                                paragraph.Range.Font.Color = WdColor.wdColorBlack;
-                                paragraph.Range.Characters[1].Font.Bold = paragraph.Range.Characters[2].Font.Bold = 1;
-                                paragraph.Range.Characters[3].Font.Bold = 0;
-                            }
+                            BoldCharacters(paragraph, 3);
                         }
-                        else if (str.StartsWith("<$>"))
+                        else if (StartsWithAny(str, "<NB>", "<TH>", "<VD>"))
                         {
-
-                            paragraph.Range.Font.Color = WdColor.wdColorBlack;
-                            paragraph.Range.Font.Bold = 0;
-
-                            if (paragraph.Range.Characters[1].Font.Underline == WdUnderline.wdUnderlineSingle)
-                            {
-                                paragraph.Range.Font.Underline = WdUnderline.wdUnderlineNone;
-                                paragraph.Range.Characters[1].Font.Underline = paragraph.Range.Characters[2].Font.Underline = paragraph.Range.Characters[3].Font.Underline = WdUnderline.wdUnderlineSingle;
-                                paragraph.Range.Characters[1].Font.Bold = paragraph.Range.Characters[2].Font.Bold = paragraph.Range.Characters[3].Font.Bold = 1;
-                            }
-                            else
-                            {
-                                paragraph.Range.Font.Underline = WdUnderline.wdUnderlineNone;
-                                paragraph.Range.Characters[1].Font.Bold = paragraph.Range.Characters[2].Font.Bold = paragraph.Range.Characters[3].Font.Bold = 1;
-                            }
+                            BoldCharacters(paragraph, 4);
                         }
-                        else
+                        else if (str.StartsWith("<VDC>"))
                         {
-                            paragraph.Range.Font.Color = WdColor.wdColorBlack;
+                            BoldCharacters(paragraph, 5);
+                        }
+                        else if (str.StartsWith("#"))
+                        {
+                            BoldCharacters(paragraph, 1);
+                        }
+                        else if (str.StartsWith("[<br>]"))
+                        {
+                            BoldCharacters(paragraph, 6);
                         }
                     }
-                    finally
+                    else if (StartsWithAny(str, "A.", "B.", "C.", "D.", "a)", "b)", "c)", "d)"))
                     {
-                        ReleaseComObject(paragraph);
+                        FormatAnswer(paragraph, 2);
+                    }
+                    else if (str.StartsWith("<$>"))
+                    {
+                        FormatAnswer(paragraph, 3);
+                    }
+                    else
+                    {
+                        paragraph.Range.Font.Color = WdColor.wdColorBlack;
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageHelper.Error(ex);
+                MessageHelper.Error($"Lỗi xảy ra ở hàm FormatQuestionAndAnswerAsync: {ex.Message}");
             }
-        }
-
-        public async Task ProcessImagesInDocumentAsync(Word._Document document, bool isBorderImage)
-        {
-            try
-            {
-                foreach (Word.InlineShape inlineShape in document.InlineShapes)
-                {
-                    try
-                    {
-                        if (inlineShape.Type != Word.WdInlineShapeType.wdInlineShapeEmbeddedOLEObject ||
-                            !inlineShape.OLEFormat.ProgID.Contains("Equation"))
-                        {
-                            await ApplyImageBorderAsync(inlineShape);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageHelper.Error($"Lỗi xử lý hình ảnh (InlineShape): {ex.Message}");
-                    }
-                    finally
-                    {
-                        ReleaseComObject(inlineShape);
-                    }
-                }
-
-                foreach (Word.Shape shape in document.Shapes)
-                {
-                    try
-                    {
-                        if (shape.Type != Office.MsoShapeType.msoEmbeddedOLEObject ||
-                            !shape.OLEFormat.ProgID.Contains("Equation"))
-                        {
-                            await ApplyImageBorderAsync(shape);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageHelper.Error($"Lỗi xử lý hình ảnh (Shape): {ex.Message}");
-                    }
-                    finally
-                    {
-                        ReleaseComObject(shape);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageHelper.Error($"Lỗi tổng khi xử lý hình ảnh: {ex.Message}");
-            }
-        }
-
-        private Task ApplyImageBorderAsync(dynamic shape)
-        {
-            shape.Borders.Enable = 1;
-            shape.Borders.OutsideLineStyle = Word.WdLineStyle.wdLineStyleSingle;
-            shape.Borders.OutsideColor = Word.WdColor.wdColorBlack;
-            shape.Borders.OutsideLineWidth = Word.WdLineWidth.wdLineWidth025pt;
-
-            return Task.CompletedTask;
-        }
-
-        public async Task<string> ConvertDocxToXpsAsync(string docxPath)
-        {
-            string xpsPath = Path.ChangeExtension(Path.GetTempFileName(), ".xps");
-            _Document? doc = null;
-
-            try
-            {
-                doc = await OpenDocumentAsync(docxPath, false); // Sử dụng hàm async
-                await Task.Run(() => doc.ExportAsFixedFormat(xpsPath, WdExportFormat.wdExportFormatXPS));
-            }
-            catch (Exception ex)
-            {
-                MessageHelper.Error($"Lỗi khi chuyển đổi Docx sang XPS: {ex.Message}");
-            }
-            finally
-            {
-                if (doc != null)
-                {
-                    await CloseDocumentAsync(doc);
-                }
-            }
-
-            return xpsPath;
         }
 
         public async Task UpdateFieldsAsync(string filePath)
         {
-            _Document? doc = null;
+            _Document? document = null;
             try
             {
-                doc = await OpenDocumentAsync(filePath, false);
-                doc.Fields.Update();
-                await SaveDocumentAsync(doc);
+                document = await OpenDocumentAsync(filePath, visible: false);
+                document.Fields.Update();
+                await SaveDocumentAsync(document);
             }
             catch (Exception ex)
             {
-                MessageHelper.Error(ex);
+                MessageHelper.Error($"Lỗi xảy ra ở hàm UpdateFieldsAsync: {ex.Message}");
             }
             finally
             {
-                if (doc != null)
+                if (document != null)
                 {
-                    await CloseDocumentAsync(doc);
+                    await CloseDocumentAsync(document);
                 }
             }
         }
 
-        public async Task ClearTabStopsAsync(Paragraph paragraph)
+        public async Task ClearTabStopsAsync(Word.Paragraph paragraph)
         {
             await Task.Run(() =>
             {
-                Word.TabStops tabStops = null!;
-
                 try
                 {
-                    tabStops = paragraph.Format.TabStops;
+                    var tabStops = paragraph.Format.TabStops;
                     for (int i = tabStops.Count; i >= 1; i--)
                     {
-                        try
-                        {
-                            Word.TabStop tab = tabStops[i];
-                            tabStops[tab.Position].Clear();
-                            ReleaseComObject(tab);
-                        }
-                        catch(Exception ex)
-                        {
-                            MessageHelper.Error($"Lỗi ClearTabStopsAsync: {ex.Message}");
-                        }
+                        tabStops[i].Clear();
                     }
-                }
-                finally
-                {
                     ReleaseComObject(tabStops);
-                }
-            });
-        }
-
-        private async Task<bool> IsQuestionAsync(string s) => await Task.Run(() => Constants.QuestionPrefixes.Any(s.StartsWith) || Constants.QuestionHeaderRegex.IsMatch(s));
-
-        private async Task<bool> IsAnswerAsync(string s) => await Task.Run(() => Constants.AnswerPrefixes.Any(s.StartsWith));
-
-        private string GenerateLabel(int index)
-        {
-            const int baseChar = 'A';
-            string label = "";
-            index++;
-
-            while (index > 0)
-            {
-                label = (char)(baseChar + (--index % 26)) + label;
-                index /= 26;
-            }
-
-            return label + ".";
-        }
-
-        private void ReleaseComObject(object? comObject)
-        {
-            try
-            {
-                if (comObject != null)
-                {
-                    Marshal.ReleaseComObject(comObject);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageHelper.Error(ex);
-            }
-        }
-
-        public async Task CloseWordAppAsync()
-        {
-            if (_wordApp == null) return;
-
-            await Task.Run(() =>
-            {
-                try
-                {
-                    var docs = _wordApp.Documents;
-                    int count = docs.Count;
-
-                    // Đóng từng tài liệu từ cuối về đầu để tránh lỗi chỉ mục
-                    for (int i = count; i >= 1; i--)
-                    {
-                        Document doc = docs[i];
-                        try
-                        {
-                            doc.Close(false);
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageHelper.Error($"Lỗi khi đóng document: {ex.Message}");
-                        }
-                        finally
-                        {
-                            ReleaseComObject(doc);
-                        }
-                    }
-
-                    _wordApp.Quit();
+                    tabStops = null;
                 }
                 catch (Exception ex)
                 {
-                    MessageHelper.Error($"Lỗi khi đóng ứng dụng Word: {ex.Message}");
-                }
-                finally
-                {
-                    ReleaseComObject(_wordApp);
-                    _wordApp = null;
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm ClearTabStopsAsync: {ex.Message}");
                 }
             });
         }
 
-        public async ValueTask DisposeAsync()
+        public async Task<int> FixMathTypeAsync(_Document document)
         {
-            await CloseWordAppAsync();
+            return await Task.Run(() =>
+            {
+                Word.InlineShapes? shapes = document?.InlineShapes;
+                try
+                {
+                    if (shapes != null && shapes.Count > 0)
+                    {
+                        var connect = new Connect();
+                        int numShapesIterated = connect.IterateShapes(ref shapes, true, true);
+                        return numShapesIterated;
+                    }
+                    return 0;
+                }
+                catch (Exception ex)
+                {
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm FixMathTypeAsync: {ex.Message}");
+                    return -1;
+                }
+            });
+        }
 
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+        public async Task<int> ConvertEquationToMathTypeAsync(_Document document)
+        {
+            return await Task.Run(() =>
+            {
+                int convertedCount = 0;
+
+                try
+                {
+                    var omaths = document?.OMaths;
+                    if (omaths == null || omaths.Count == 0)
+                        return 0;
+
+                    var connect = new Connect();
+
+                    foreach (Word.OMath omath in omaths)
+                    {
+                        Word.Range range = omath.Range;
+
+                        // Chèn đối tượng MathType tại vị trí công thức Equation
+                        Word.InlineShape shape = document!.InlineShapes.AddOLEObject(
+                            ClassType: "Equation.DSMT4",
+                            FileName: "",
+                            LinkToFile: false,
+                            DisplayAsIcon: false,
+                            Range: range);
+
+                        // Lấy GUID và verb để gửi dữ liệu
+                        Guid clsid;
+                        string progID = "Equation.DSMT4";
+                        if (!connect.FindAutoConvert(ref progID, out clsid))
+                            continue;
+
+                        if (!connect.DoesServerExist(ref clsid))
+                            continue;
+
+                        string format = "MathML";
+                        if (!connect.DoesServerSupportFormat(ref clsid, ref format))
+                            continue;
+
+                        int verbIndex = connect.GetVerbIndex("RunForConversion", ref clsid);
+                        if (verbIndex == 999)
+                            continue;
+
+                        // Gửi MathML mẫu vào đối tượng MathType
+                        connect.Equation_SetData(ref shape, ref format, verbIndex, true);
+                        convertedCount++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm ConvertEquationToMathTypeAsync: {ex.Message}");
+                    return -1;
+                }
+
+                return convertedCount;
+            });
+        }
+
+        public async Task RejectAllChangesAsync(_Document document)
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    // Kiểm tra nếu có thay đổi đang được theo dõi
+                    if (document.Revisions.Count > 0)
+                    {
+                        document.Revisions.RejectAll();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm RejectAllChangesAsync: {ex.Message}");
+                }
+                finally
+                {
+                    Marshal.FinalReleaseComObject(document.Revisions);
+                }
+            });
+        }
+
+        private async Task<Application> GetWordAppAsync()
+        {
+            if (_wordApp == null)
+            {
+                _wordApp = await Task.Run(() => new Application());
+            }
+            return _wordApp;
+        }
+        private static float CmToPt(float cm) => (float)(cm * 28.35);
+        private static void FormatNormalStyle(Style style)
+        {
+            var para = style.ParagraphFormat;
+            para.Alignment = Word.WdParagraphAlignment.wdAlignParagraphJustify;
+            para.OutlineLevel = WdOutlineLevel.wdOutlineLevelBodyText;
+            para.LeftIndent = 0f;
+            para.CharacterUnitLeftIndent = 0f;
+            para.RightIndent = 0f;
+            para.SpaceBefore = 0f;
+            para.SpaceAfter = 0f;
+            para.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceMultiple;
+            para.LineSpacing = 14.4f;
+            para.FirstLineIndent = 0f;
+            para.HangingPunctuation = 0;
+        }
+        private static void FormatPageSetup(PageSetup setup)
+        {
+            setup.PaperSize = Word.WdPaperSize.wdPaperA4;
+            setup.Orientation = Word.WdOrientation.wdOrientPortrait;
+            setup.TopMargin = CmToPt(1.27f);
+            setup.BottomMargin = CmToPt(1.27f);
+            setup.LeftMargin = CmToPt(1.27f);
+            setup.RightMargin = CmToPt(1.27f);
+            setup.HeaderDistance = CmToPt(1.27f);
+            setup.FooterDistance = CmToPt(1.27f);
+        }
+        private static void ReleaseComObject(object? comObject)
+        {
+            if (comObject != null && Marshal.IsComObject(comObject))
+            {
+                try
+                {
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        Marshal.FinalReleaseComObject(comObject);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageHelper.Error($"Lỗi xảy ra ở hàm ReleaseComObject: {ex.Message}");
+                }
+            }
+        }
+        private static Task<bool> IsQuestionAsync(string s)
+        {
+            bool result = Constants.QuestionPrefixes.Any(s.StartsWith) || Constants.QuestionHeaderRegex.IsMatch(s);
+            return Task.FromResult(result);
+        }
+        private static Task<bool> IsAnswerAsync(string s)
+        {
+            bool result = Constants.AnswerPrefixes.Any(s.StartsWith);
+            return Task.FromResult(result);
+        }
+        private static string GenerateLabel(int index)
+        {
+            index++; // Bắt đầu từ 1 thay vì 0
+            var label = new StringBuilder();
+
+            while (index > 0)
+            {
+                index--;
+                label.Insert(0, (char)('A' + index % 26));
+                index /= 26;
+            }
+
+            return label.ToString();
+        }
+        private void BoldCharacters(Word.Paragraph paragraph, int count)
+        {
+            for (int i = 1; i <= count; i++)
+            {
+                paragraph.Range.Characters[i].Font.Bold = 1;
+            }
+        }
+        private void FormatAnswer(Word.Paragraph paragraph, int boldCount)
+        {
+            var range = paragraph.Range;
+            int totalChars = range.Characters.Count;
+
+            // Đặt toàn bộ đoạn về màu đen, bỏ đậm
+            range.Font.Color = WdColor.wdColorBlack;
+            range.Font.Bold = 0;
+
+            // Kiểm tra đủ độ dài
+            if (totalChars >= boldCount)
+            {
+                bool isUnderlined = range.Characters[1].Font.Underline == WdUnderline.wdUnderlineSingle;
+                for (int i = 1; i <= boldCount; i++)
+                {
+                    range.Characters[i].Font.Bold = 1;
+                    if (isUnderlined)
+                    {
+                        range.Characters[i].Font.Underline = WdUnderline.wdUnderlineSingle;
+                    }
+                }
+
+                // Bỏ gạch chân phần sau nếu không cần giữ
+                Word.Range tailRange = range.Duplicate;
+                tailRange.MoveStart(WdUnits.wdCharacter, boldCount);
+                tailRange.Font.Underline = WdUnderline.wdUnderlineNone;
+            }
+        }
+        private bool StartsWithAny(string input, params string[] prefixes)
+        {
+            return prefixes.Any(p => input.StartsWith(p));
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using Desktop.Models;
-using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 
@@ -17,5 +16,6 @@ namespace Desktop.Services.Interfaces
 
         Task GenerateShuffledExamsAsync(string sourceFile, string outputFolder, MixInfo mixInfo);
         Task<List<Question>> ParseDocxQuestionsAsync(string filePath);
+        Task<string> ExtractTextAsync(string filePath);
     }
 }

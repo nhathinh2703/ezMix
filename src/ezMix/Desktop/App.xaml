@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Desktop"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
-             xmlns:converters="clr-namespace:Desktop.Assets.Converters">
+             xmlns:converters="clr-namespace:Desktop.Assets.Converters"
+    xmlns:theme="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero2">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -13,10 +14,15 @@
                 <ResourceDictionary Source="Assets/Styles/Themes/Global.xaml"/>
 
                 <ResourceDictionary Source="Assets/Styles/Controls/Button.xaml"/>
+                <ResourceDictionary Source="Assets/Styles/Controls/TextBox.xaml"/>
+                <ResourceDictionary Source="Assets/Styles/Controls/TextBlock.xaml"/>
+                <ResourceDictionary Source="Assets/Styles/Controls/ComboBox.xaml"/>
                 <ResourceDictionary Source="Assets/Styles/Controls/TreeView.xaml"/>
 
                 <ResourceDictionary Source="Assets/Styles/Converters/ConverterResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

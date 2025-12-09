@@ -17,6 +17,7 @@ namespace Desktop.DependencyInjection
             services.AddTransient<IExcelAnswerExporter, ExcelAnswerExporter>();
             services.AddTransient<IOpenXMLService, OpenXMLService>();
             services.AddTransient<IInteropWordService, InteropWordService>();
+            services.AddTransient<IGeminiService, GeminiService>();
 
             services.AddHttpClient();
             services.AddScoped<IVersionChecker, VersionChecker>();
@@ -25,12 +26,14 @@ namespace Desktop.DependencyInjection
             // Đăng ký Views
             services.AddSingleton<HomeView>();
             services.AddTransient<MainWindow>();
-            services.AddTransient<NormalizationView>();
+            services.AddTransient<MixView>();
+            services.AddTransient<UtilityView>();
 
             // Đăng ký ViewModels
             services.AddTransient<HomeViewModel>();
             services.AddSingleton<MainViewModel>();
-            services.AddTransient<NormalizationViewModel>();
+            services.AddTransient<MixViewModel>();
+            services.AddTransient<UtilityViewModel>();
 
             return services;
         }

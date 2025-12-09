@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Desktop.Helpers;
 using Desktop.Models;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -14,8 +15,9 @@ namespace Desktop.ViewModels
 
         [ObservableProperty] private ObservableObject? currentViewModel;
         [ObservableProperty] private bool isMenuExpanded = true;
-        [ObservableProperty] public double menuWidth = 180;
+        [ObservableProperty] public double menuWidth = 140;
         [ObservableProperty] public string appVersion = string.Empty;
+        [ObservableProperty] private string currentTitle = "Trang chủ";
 
         public MainViewModel(IServiceProvider serviceProvider)
         {
@@ -23,19 +25,19 @@ namespace Desktop.ViewModels
             Menus = new ObservableCollection<MenuItem>
             {
                 new("🏠", "Trang chủ", typeof(HomeViewModel)),
-                new("⚙️", "Trộn đề", typeof(NormalizationViewModel)),
-                new("❓", "Hỗ trợ", null)
-                {
-                    Children =
-                    {
-                        new("🔄", "Cập nhật", null),
-                        new("📞", "Liên hệ", null),
-                        new("📘", "Hướng dẫn", null),
-                    }
-                }
+                new("🔀", "Trộn đề", typeof(MixViewModel)),
+                new("🛠️", "Tiện ích", typeof(UtilityViewModel)),
+                //new("❓", "Hỗ trợ", null)
+                //{
+                //    Children =
+                //    {
+                //        new("🔄", "Cập nhật", null),
+                //        new("📞", "Liên hệ", null),
+                //        new("📘", "Hướng dẫn", null),
+                //    }
+                //}
             };
 
-            //AppVersion = $"v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}";
             var fullVersion = FileVersionInfo
                 .GetVersionInfo(Assembly.GetExecutingAssembly().Location)
                 .ProductVersion;
@@ -49,7 +51,7 @@ namespace Desktop.ViewModels
         private void ToggleMenu()
         {
             IsMenuExpanded = !IsMenuExpanded;
-            MenuWidth = IsMenuExpanded ? 180 : 90;
+            MenuWidth = IsMenuExpanded ? 130 : 40;
         }
 
         [RelayCommand]
@@ -61,7 +63,15 @@ namespace Desktop.ViewModels
             if (vm != null)
             {
                 CurrentViewModel = vm;
+                CurrentTitle = menu.Title;
             }
+        }
+
+        [RelayCommand]
+        private static void OpenZalo()
+        {
+            string url = Constants.GROUP_ZALO;
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
     }
 }
