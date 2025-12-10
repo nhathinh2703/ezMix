@@ -1,144 +1,29 @@
-# \# 🧩 ezMix
-
-# 
-
-# \*\*ezMix\*\* là phần mềm hỗ trợ \*\*trộn và tạo đề kiểm tra tự động\*\*, giúp giáo viên dễ dàng sinh nhiều phiên bản đề khác nhau chỉ với vài thao tác đơn giản.
-
-# 
-
-# ---
-
-# 
-
-# \## 🚀 Tính năng chính
-
-# 
-
-# \- 🔄 \*\*Trộn đề tự động\*\* từ file gốc (Word hoặc định dạng chuẩn).  
-
-# \- 🧮 \*\*Sinh nhiều mã đề\*\* nhanh chóng, chính xác.  
-
-# \- ✏️ \*\*Giữ nguyên định dạng câu hỏi, công thức, hình ảnh.\*\*  
-
-# \- 🧰 \*\*Tùy chọn cấu trúc đề\*\* (số câu, điểm, phần trắc nghiệm/tự luận).  
-
-# \- 💾 \*\*Xuất file Word hoặc PDF\*\* sau khi trộn.  
-
-# \- 🖥️ Giao diện thân thiện, dễ dùng cho giáo viên.  
-
-# 
-
-# ---
-
-# 
-
-# \## 🛠️ Yêu cầu hệ thống
-
-# 
-
-# \- \*\*Windows 10/11\*\*  
-
-# \- \*\*.NET 8.0 Runtime\*\* (hoặc cao hơn)  
-
-# \- Microsoft Word (để mở và chỉnh sửa file đầu ra)
-
-# 
-
-# ---
-
-# 
-
-# \## 📦 Cài đặt \& sử dụng
-
-# 
-
-# 1\. Tải bản phát hành mới nhất tại:  
-
-# &nbsp;  👉 \[Releases](https://github.com/nhathinh2703/ezMix/releases)
-
-# 
-
-# 2\. Giải nén và mở `ezMix.exe`.
-
-# 
-
-# 3\. Chọn \*\*file đề gốc\*\*, cấu hình \*\*số lượng mã đề\*\* và \*\*tùy chọn xuất\*\*.
-
-# 
-
-# 4\. Nhấn \*\*Trộn đề\*\* để tạo các đề kiểm tra hoàn chỉnh.
-
-# 
-
-# ---
-
-# 
-
-# \## 🧠 Ví dụ
-
-# 
-
-# | File | Mô tả |
-
-# |------|-------|
-
-# | `DeGoc.docx` | File đề gốc với 40 câu hỏi |
-
-# | `De\_A.docx`  | Mã đề A sau khi trộn |
-
-# | `De\_B.docx`  | Mã đề B sau khi trộn |
-
-# 
-
-# ---
-
-# 
-
-# \## 🔍 Thông tin kỹ thuật
-
-# 
-
-# \- Ngôn ngữ: \*\*C# (.NET 8 / WPF)\*\*  
-
-# \- Đóng gói bởi: \*\*Lê Phúc Nhã Thịnh (LPNT)\*\*  
-
-# \- Mã nguồn: \[https://github.com/nhathinh2703/ezMix](https://github.com/nhathinh2703/ezMix)
-
-# 
-
-# ---
-
-# 
-
-# \## 📄 Giấy phép
-
-# 
-
-# Phần mềm \*\*sử dụng nội bộ\*\*.  
-
-# Không phân phối thương mại nếu chưa được tác giả cho phép.
-
-# 
-
-# ---
-
-# 
-
-# \## 💬 Liên hệ
-
-# 
-
-# \- 📧 \*\*Email:\*\* \[nhathinh2703@gmail.com](mailto:nhathinh2703@gmail.com)  
-
-# \- 🌐 \*\*GitHub:\*\* \[@nhathinh2703](https://github.com/nhathinh2703)
-
-# 
-
-# ---
-
-# 
-
-# > 💡 \*ezMix – công cụ đơn giản, hiệu quả và thân thiện giúp giáo viên tiết kiệm thời gian tạo đề kiểm tra.\*
-
-
-
+# ezMix Desktop
+
+Ứng dụng hỗ trợ xử lý và thao tác với tài liệu Word, được xây dựng trên nền tảng .NET và WPF, sử dụng OpenXML SDK để định dạng và phân tích nội dung.
+
+## ✨ Tính năng chính
+
+### 1. Chuẩn hóa
+- Tự động định dạng đoạn văn bản theo chuẩn:
+  - Font chữ (Times New Roman, Arial, …).
+  - Cỡ chữ (10pt – 20pt).
+  - Spacing (0pt trước/sau, line spacing 1.2).
+- Đảm bảo tài liệu đồng bộ về hình thức, phù hợp quy định trình bày.
+
+### 2. Phân tích
+- Đọc và phân tích cấu trúc tài liệu Word.
+- Trích xuất thông tin quan trọng từ đoạn văn, câu hỏi, đáp án.
+- Hỗ trợ người dùng kiểm tra nhanh bố cục và nội dung.
+
+### 3. Trộn đề
+- Tự động trộn câu hỏi để tạo nhiều phiên bản đề thi khác nhau.
+- Giữ nguyên định dạng chuẩn khi trộn.
+- Giúp tiết kiệm thời gian soạn đề và đảm bảo tính ngẫu nhiên, công bằng.
+
+## 🛠 Công nghệ
+- **.NET 10.0 (Windows target)**  
+- **WPF (Windows Presentation Foundation)** cho giao diện.  
+- **OpenXML SDK** để thao tác và định dạng tài liệu Word.  
+- **PowerShell** script (`Build.ps1`) để build và publish.  
+- **MVVM pattern**
