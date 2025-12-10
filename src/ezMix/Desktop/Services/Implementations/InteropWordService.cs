@@ -49,8 +49,11 @@ namespace Desktop.Services.Implementations
                 }
                 finally
                 {
-                    ReleaseComObject(doc); // dùng hàm Release wrapper của bạn
-                    doc = null!;
+                    // Giải phóng COM object để tránh lỗi RPC
+                    if (doc != null)
+                    {
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(doc);
+                    }
                 }
             });
         }
@@ -574,12 +577,14 @@ namespace Desktop.Services.Implementations
 
         public async Task UpdateFieldsAsync(string filePath)
         {
-            _Document? document = null;
+            Word.Application? app = null;
+            Word._Document? document = null;
             try
             {
-                document = await OpenDocumentAsync(filePath, visible: false);
+                app = new Word.Application();
+                document = app.Documents.Open(filePath, ReadOnly: false, Visible: false);
                 document.Fields.Update();
-                await SaveDocumentAsync(document);
+                document.Save();
             }
             catch (Exception ex)
             {
@@ -589,10 +594,17 @@ namespace Desktop.Services.Implementations
             {
                 if (document != null)
                 {
-                    await CloseDocumentAsync(document);
+                    document.Close(false);
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(document);
+                }
+                if (app != null)
+                {
+                    app.Quit(false);
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(app);
                 }
             }
         }
+
 
         public async Task ClearTabStopsAsync(Word.Paragraph paragraph)
         {

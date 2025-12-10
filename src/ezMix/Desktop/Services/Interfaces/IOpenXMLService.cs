@@ -12,7 +12,7 @@ namespace Desktop.Services.Interfaces
         Task CloseDocumentAsync(WordprocessingDocument document);
         Task<string> GetDocumentTextAsync(WordprocessingDocument document);
         Task<Body> GetDocumentBodyAsync(WordprocessingDocument document);
-        Task FormatAllParagraphsAsync(WordprocessingDocument doc);
+        Task FormatAllParagraphsAsync(WordprocessingDocument doc, MixInfo mixInfo);
 
         Task GenerateShuffledExamsAsync(string sourceFile, string outputFolder, MixInfo mixInfo);
         Task<List<Question>> ParseDocxQuestionsAsync(string filePath);

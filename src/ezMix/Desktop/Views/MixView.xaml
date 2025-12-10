@@ -22,10 +22,9 @@
                 <GroupBox Header="Cấu hình tùy chọn"
                           Margin="5"
                           Padding="5"
-                          BorderBrush="{StaticResource AppPrimaryColor}"
                           FontFamily="{StaticResource AppFontFamily}"
                           FontSize="{StaticResource AppFontSize}">
-                    <Grid>
+                    <Grid ShowGridLines="True">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
@@ -34,53 +33,88 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>                       
 
-                        <Grid Grid.Row="0" Grid.Column="0" Margin="5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Style="{StaticResource ezTextBlock}" Text="Phông chữ:" Margin="5"/>
-                            <ComboBox Grid.Column="1"
-                                      ItemsSource="{Binding FontFamilies}"
-                                      SelectedItem="{Binding FontFamily, Mode=TwoWay}"
-                                      Margin="5"
-                                      HorizontalAlignment="Stretch"/>
-                        </Grid>
+                        <CheckBox Grid.Row="0" Grid.Column="0"
+                                  Content="Đảo câu hỏi trắc nghiệm đơn"
+                                  IsChecked="{Binding MixInfo.IsShuffledQuestionMultipleChoice}"
+                                  Margin="5"
+                                  VerticalAlignment="Center"/>
 
-                        <Grid Grid.Row="0" Grid.Column="1" Margin="5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Style="{StaticResource ezTextBlock}" Text="Cỡ chữ:" Margin="5"/>
-                            <ComboBox Grid.Column="1"
-                                      ItemsSource="{Binding FontSizes}"
-                                      SelectedItem="{Binding FontSize, Mode=TwoWay}"
-                                      
-                                      Margin="5"
-                                      HorizontalAlignment="Stretch"/>
-                        </Grid>
+                        <CheckBox Grid.Row="0" Grid.Column="1"
+                                  Content="Đảo đáp án trắc nghiệm đơn"
+                                  IsChecked="{Binding MixInfo.IsShuffledAnswerMultipleChoice}"
+                                  Margin="5"
+                                  VerticalAlignment="Center"/>
 
-                        <CheckBox Grid.Row="0" Grid.Column="2"
+                        <CheckBox Grid.Row="1" Grid.Column="0"
+                                  Content="Đảo câu hỏi đúng-sai"
+                                  IsChecked="{Binding MixInfo.IsShuffledQuestionTrueFalse}"
+                                  Margin="5"
+                                  VerticalAlignment="Center"/>
+
+                        <CheckBox Grid.Row="1" Grid.Column="1"
+                                  Content="Đảo đáp án đúng-sai"
+                                  IsChecked="{Binding MixInfo.IsShuffledAnswerTrueFalse}"
+                                  Margin="5"
+                                  VerticalAlignment="Center"/>
+                        
+                        <CheckBox Grid.Row="2" Grid.Column="0"
+                                  Content="Đảo câu trả lời ngắn"
+                                  IsChecked="{Binding MixInfo.IsShuffledShortAnswer}"
+                                  Margin="5"
+                                  VerticalAlignment="Center"/>
+                        
+                        <CheckBox Grid.Row="2" Grid.Column="1"
+                                  Content="Đảo câu tự luận"
+                                  IsChecked="{Binding MixInfo.IsShuffledEssay}"
+                                  Margin="5"
+                                  VerticalAlignment="Center"/>
+
+                        <CheckBox Grid.Row="0" Grid.Column="3"
                                   Content="Sửa lệch MathType"
                                   IsChecked="{Binding MixInfo.IsFixMathType}"
                                   Margin="5"
                                   VerticalAlignment="Center"/>
 
-                        <CheckBox Grid.Row="1" Grid.Column="2"
+                        <CheckBox Grid.Row="1" Grid.Column="3"
                                   Content="Xóa nhật ký khi bắt đầu"
                                   IsChecked="{Binding MixInfo.IsDeleteLogWhenStart}"
                                   Margin="5"
                                   VerticalAlignment="Center"/>
+
+                        <Grid Grid.Row="2" Grid.Column="3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="75"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Style="{StaticResource ezTextBlock}" Text="Cỡ chữ:" Margin="5"/>
+                            <ComboBox Grid.Column="1"
+                                       ItemsSource="{Binding FontSizes}"
+                                       SelectedItem="{Binding FontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"               
+                                       Margin="5"
+                                       HorizontalAlignment="Stretch"/>
+                        </Grid>
+                        
+                        <Grid Grid.Row="3" Grid.Column="3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="75"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Style="{StaticResource ezTextBlock}" Text="Phông chữ:" Margin="5"/>
+                            <ComboBox Grid.Column="1"
+                                       ItemsSource="{Binding FontFamilies}"
+                                       SelectedItem="{Binding FontFamily, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       Margin="5"
+                                       HorizontalAlignment="Stretch"/>
+                        </Grid>
                     </Grid>
                 </GroupBox>
 
                 <GroupBox Header="📁 Tệp và xử lý"
                           Margin="5"
-                          Padding="5"
-                          BorderBrush="{StaticResource AppPrimaryColor}"
                           FontFamily="{StaticResource AppFontFamily}"
                           FontSize="{StaticResource AppFontSize}">
                     <Grid>
@@ -96,48 +130,45 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <ComboBox Grid.Row="0" Grid.Column="0"
-                                  Style="{StaticResource ezComboBox}"                                      
+                        <ComboBox Grid.Row="0" Grid.Column="0"                                    
                                   ItemsSource="{Binding ExamTypes}"                                      
                                   SelectedItem="{Binding SelectedExamType}"                                      
                                   Margin="5"/>
 
                         <Button Grid.Row="1" Grid.Column="0"
                                 Content="📂 Chuẩn hóa"      
-                                Style="{StaticResource ezPrimaryButton}"
                                 Command="{Binding AnalyzeFileCommand}"
-                                Margin="5"
-                                Background="{StaticResource AppPrimaryColor}"
-                                Foreground="White"/>
+                                Padding="3"
+                                Margin="5"/>
 
                         <Button Grid.Row="2" Grid.Column="0"
                                 Content="📂 Nhận dạng"
-                                Style="{StaticResource ezSecondaryButton}"
                                 Command="{Binding RecognitionFileCommand}"
-                                Margin="5"
-                                Background="{StaticResource AppPrimaryColor}"
-                                Foreground="White"/>
+                                Padding="3"
+                                Margin="5"/>
+                        
                         <TextBox Grid.Row="0" Grid.Column="1"
-                                 Style="{StaticResource ezTextBox}"
-                                 FontSize="12"
+                                 VerticalAlignment="Center"
+                                 Padding="3"
                                  Text="{Binding SourceFile, StringFormat='Nguồn: {0}'}"
                                  Margin="5"/>
 
                         <Button Grid.Row="0" Grid.Column="2"
-                                Content="Mở"
+                                Content="Mở tệp nguồn"
                                 Padding="3"
                                 Margin="5"
+                                FontSize="13"
                                 Command="{Binding OpenFileCommand}"
                                 CommandParameter="{Binding SourceFile}"/>
 
-                        <TextBox Grid.Row="1" Grid.Column="1"                                 
-                                 FontSize="12"
-                                 Style="{StaticResource ezTextBox}"
+                        <TextBox Grid.Row="1" Grid.Column="1"
+                                 VerticalAlignment="Center"
+                                 Padding="3"
                                  Text="{Binding DestinationFile, StringFormat='Đích: {0}'}"
                                  Margin="5"/>
                         
                         <Button Grid.Row="1" Grid.Column="2"
-                                Content="Mở"
+                                Content="Mở tệp đích"
                                 Padding="3"
                                 Margin="5"
                                 Command="{Binding OpenFileCommand}"
@@ -159,8 +190,6 @@
 
                 <GroupBox Header="🎯 Cấu hình thông tin trộn"
                           Margin="5"
-                          Padding="5"
-                          BorderBrush="{StaticResource AppPrimaryColor}"
                           FontFamily="{StaticResource AppFontFamily}"
                           FontSize="{StaticResource AppFontSize}">
                     <StackPanel>
@@ -280,7 +309,6 @@
                       FontFamily="{StaticResource AppFontFamily}"
                       FontSize="{StaticResource AppFontSize}"
                       RowHeaderWidth="0"
-                      BorderBrush="{StaticResource AppPrimaryColor}"
                       BorderThickness="1"
                       Margin="5">
                     <DataGrid.Columns>

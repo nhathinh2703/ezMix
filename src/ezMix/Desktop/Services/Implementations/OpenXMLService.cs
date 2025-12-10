@@ -71,11 +71,11 @@ namespace Desktop.Services.Implementations
             return Task.FromResult(document.MainDocumentPart!.Document.Body!);
         }
 
-        public Task FormatAllParagraphsAsync(WordprocessingDocument doc)
+        public Task FormatAllParagraphsAsync(WordprocessingDocument doc, MixInfo mixInfo)
         {
             var body = doc.MainDocumentPart!.Document.Body!;
             foreach (var para in body.Descendants<Paragraph>())
-                FormatParagraph(para);
+                FormatParagraph(para, mixInfo);
             return Task.CompletedTask;
         }
 
@@ -106,7 +106,7 @@ namespace Desktop.Services.Implementations
                     using (var answerDoc = WordprocessingDocument.Open(answerFile, true))
                     {
                         // Truyền các đối tượng tài liệu để tránh mở/đóng nhiều lần
-                        var answers = await ShuffleQuestionsAsync(mixDoc, version, answerDoc);
+                        var answers = await ShuffleQuestionsAsync(mixDoc, version, answerDoc, mixInfo);
 
                         await InsertTemplateAsync(mixTemplate, mixDoc, mixInfo, version);
                         foreach (var a in answers)
@@ -114,12 +114,11 @@ namespace Desktop.Services.Implementations
                             a.Version = version;
                             allAnswers.Add(a);
                         }
-                        await AddFooterAsync(mixDoc, version);
+                        await AddFooterAsync(mixDoc, version);                              
                         await AddEndNotesAsync(mixDoc);
-                        await FormatAllParagraphsAsync(mixDoc);
+                        await FormatAllParagraphsAsync(mixDoc, mixInfo);
                         await AppendGuideAsync(answerDoc, answers, mixInfo, version);
                         await MoveEssayTableToEndAsync(answerDoc);
-                        await FormatAllParagraphsAsync(answerDoc);
                         mixDoc.MainDocumentPart!.Document.Save();
                         answerDoc.MainDocumentPart!.Document.Save();
                     }
@@ -129,7 +128,7 @@ namespace Desktop.Services.Implementations
             });
         }
 
-        private async Task<List<QuestionExport>> ShuffleQuestionsAsync(WordprocessingDocument doc, string version, WordprocessingDocument? answerDoc = null)
+        private async Task<List<QuestionExport>> ShuffleQuestionsAsync(WordprocessingDocument doc, string version, WordprocessingDocument? answerDoc = null, MixInfo? mixInfo = null)
         {
             return await Task.Run(async () =>
             {
@@ -154,6 +153,20 @@ namespace Desktop.Services.Implementations
                 foreach (var key in grouped.Keys.ToList())
                 {
                     if (version.Equals(Constants.ROOT_CODE)) continue;
+
+                    if (key == QuestionType.MultipleChoice && mixInfo?.IsShuffledQuestionMultipleChoice == false)
+                        continue;
+
+                    // ➤ Nếu là TrueFalse và MixInfo.IsShuffledQuestionTF = false thì giữ nguyên
+                    if (key == QuestionType.TrueFalse && mixInfo?.IsShuffledQuestionTrueFalse == false)
+                        continue;
+
+                    if (key == QuestionType.ShortAnswer && mixInfo?.IsShuffledShortAnswer == false)
+                        continue;
+
+                    if (key == QuestionType.Essay && mixInfo?.IsShuffledEssay == false)
+                        continue;
+
                     grouped[key] = grouped[key].OrderBy(_ => rng.Next()).ToList();
                 }
 
@@ -186,7 +199,7 @@ namespace Desktop.Services.Implementations
                         localQuestion++;
                         questionNumber++;
                         var type = group.Key;
-                        var newBlock = ShuffleAnswers(block, type, version, doc.MainDocumentPart!, out string correct, out var answerElements);
+                        var newBlock = ShuffleAnswers(block, type, version, doc.MainDocumentPart!, out string correct, out var answerElements, mixInfo!);
 
                         // Cập nhật số thứ tự câu hỏi hiển thị
                         var firstPara = newBlock.OfType<Paragraph>().FirstOrDefault();
@@ -319,7 +332,7 @@ namespace Desktop.Services.Implementations
             });
         }
 
-        private List<OpenXmlElement> ShuffleAnswers(List<OpenXmlElement> block, QuestionType type, string version, MainDocumentPart sourcePart, out string correctAnswer, out List<OpenXmlElement>? answerElements)
+        private List<OpenXmlElement> ShuffleAnswers(List<OpenXmlElement> block, QuestionType type, string version, MainDocumentPart sourcePart, out string correctAnswer, out List<OpenXmlElement>? answerElements, MixInfo mixInfo)
         {
             var rnd = new Random();
             correctAnswer = string.Empty;
@@ -350,7 +363,11 @@ namespace Desktop.Services.Implementations
                 int firstAnswerIndexInBlock = allElements.IndexOf(answerStartParas.First().Paragraph);
                 var questionElements = allElements.Take(firstAnswerIndexInBlock).ToList();
 
-                var shuffled = version.Equals(Constants.ROOT_CODE) ? answerGroups : answerGroups.OrderBy(_ => rnd.Next()).ToList();
+                // Nếu là đề gốc hoặc MixInfo.IsShuffledAnswerMultipleChoice = false thì giữ nguyên
+                var shuffled = (version.Equals(Constants.ROOT_CODE) || mixInfo?.IsShuffledAnswerMultipleChoice == false)
+                    ? answerGroups
+                    : answerGroups.OrderBy(_ => rnd.Next()).ToList();
+
                 var labels = new[] { "A.", "B.", "C.", "D." };
 
                 correctAnswer = UpdateAnswerLabels(shuffled, labels);
@@ -558,7 +575,12 @@ namespace Desktop.Services.Implementations
                                                                                 r.RunProperties.Underline.Val != UnderlineValues.None))
                 }).ToList();
 
-                var shuffled = version.Equals(Constants.ROOT_CODE) ? originalList : originalList.OrderBy(_ => rnd.Next()).ToList();
+                var shuffled = originalList;
+
+                if (!version.Equals(Constants.ROOT_CODE) && mixInfo.IsShuffledAnswerTrueFalse)
+                {
+                    shuffled = originalList.OrderBy(_ => rnd.Next()).ToList();
+                }
                 var labels = new[] { "a)", "b)", "c)", "d)" };
 
                 var resultParas = new List<OpenXmlElement>();
@@ -1122,23 +1144,52 @@ namespace Desktop.Services.Implementations
                 paragraphProperties.Append(new Justification() { Val = JustificationValues.Right });
                 paragraph.AppendChild(paragraphProperties);
 
-                paragraph.Append(new Run(new Text($"Trang ") { Space = SpaceProcessingModeValues.Preserve }));
+                // Hàm tiện ích tạo Run với font Times New Roman
+                Run CreateRun(string text)
+                {
+                    var run = new Run(new Text(text) { Space = SpaceProcessingModeValues.Preserve });
+                    var runProps = new RunProperties();
+                    runProps.Append(new RunFonts() { Ascii = "Times New Roman", HighAnsi = "Times New Roman" });
+                    runProps.Append(new FontSize() { Val = "24" }); // 24 half-points = 12pt
+                    run.PrependChild(runProps);
+                    return run;
+                }
+
+                // Thêm chữ "Trang "
+                paragraph.Append(CreateRun("Trang "));
 
                 // Trường cho số trang hiện tại
                 var pageNumberField = new Run(new FieldChar() { FieldCharType = FieldCharValues.Begin });
                 var pageNumber = new Run(new FieldCode("PAGE"));
                 var pageNumberEnd = new Run(new FieldChar() { FieldCharType = FieldCharValues.End });
 
+                // Gắn font cho các FieldCode
+                foreach (var r in new[] { pageNumber, pageNumberField, pageNumberEnd })
+                {
+                    var runProps = new RunProperties();
+                    runProps.Append(new RunFonts() { Ascii = "Times New Roman", HighAnsi = "Times New Roman" });
+                    runProps.Append(new FontSize() { Val = "24" });
+                    r.PrependChild(runProps);
+                }
+
                 // Trường cho tổng số trang
                 var totalPagesField = new Run(new FieldChar() { FieldCharType = FieldCharValues.Begin });
                 var totalPages = new Run(new FieldCode("SECTIONPAGES"));
                 var totalPagesEnd = new Run(new FieldChar() { FieldCharType = FieldCharValues.End });
 
+                foreach (var r in new[] { totalPagesField, totalPages, totalPagesEnd })
+                {
+                    var runProps = new RunProperties();
+                    runProps.Append(new RunFonts() { Ascii = "Times New Roman", HighAnsi = "Times New Roman" });
+                    runProps.Append(new FontSize() { Val = "24" });
+                    r.PrependChild(runProps);
+                }
+
                 // Thêm thông tin vào paragraph
                 paragraph.Append(pageNumberField, pageNumber, pageNumberEnd);
-                paragraph.Append(new Run(new Text($"/")));
+                paragraph.Append(CreateRun("/"));
                 paragraph.Append(totalPagesField, totalPages, totalPagesEnd);
-                paragraph.Append(new Run(new Text($" - Mã đề {version}") { Space = SpaceProcessingModeValues.Preserve }));
+                paragraph.Append(CreateRun($" - Mã đề {version}"));
 
                 footer.Append(paragraph);
                 footerPart.Footer = footer;
@@ -1147,12 +1198,16 @@ namespace Desktop.Services.Implementations
                 var sectionProperties = doc.MainDocumentPart.Document.Body!.Elements<SectionProperties>().FirstOrDefault();
                 if (sectionProperties != null)
                 {
-                    var footerReference = new FooterReference() { Id = doc.MainDocumentPart.GetIdOfPart(footerPart), Type = HeaderFooterValues.Default };
+                    var footerReference = new FooterReference()
+                    {
+                        Id = doc.MainDocumentPart.GetIdOfPart(footerPart),
+                        Type = HeaderFooterValues.Default
+                    };
                     sectionProperties.Append(footerReference);
                 }
                 doc.MainDocumentPart.Document.Save();
             });
-        }
+        }            
 
         private async Task InsertTemplateAsync(string templatePath, WordprocessingDocument doc, MixInfo mixInfo, string code)
         {
@@ -1468,27 +1523,34 @@ namespace Desktop.Services.Implementations
             _ => ""
         };
 
-        private void FormatParagraph(Paragraph para)
+        private void FormatParagraph(Paragraph para, MixInfo mixInfo)
         {
             para.ParagraphProperties ??= new ParagraphProperties();
 
-            // Xóa spacing cũ để tránh Word giữ lại
+            // Xóa toàn bộ spacing cũ
             para.ParagraphProperties.RemoveAllChildren<SpacingBetweenLines>();
 
-            // Spacing: Before = 0pt, After = 0pt, Line = 1.2 dòng
+            // Ép spacing về 0pt trước/sau, line 1.2
             para.ParagraphProperties.SpacingBetweenLines = new SpacingBetweenLines
             {
-                Before = "0",   // 0pt
-                After = "0",    // 0pt
-                Line = "288",   // 1.2 dòng (240 * 1.2)
+                Before = "0",
+                After = "0",
+                Line = "288", // 1.2 dòng
                 LineRule = LineSpacingRuleValues.Auto
             };
 
+            para.ParagraphProperties.ParagraphStyleId = new ParagraphStyleId() { Val = "Normal" };
+
+            // Font Times New Roman 12pt cho tất cả run
             foreach (var run in para.Elements<Run>())
             {
                 run.RunProperties ??= new RunProperties();
-                run.RunProperties.RunFonts = new RunFonts { Ascii = "Times New Roman", HighAnsi = "Times New Roman" };
-                run.RunProperties.FontSize = new FontSize { Val = "24" }; // 12pt
+                run.RunProperties.RunFonts = new RunFonts { Ascii = mixInfo.FontFamily, HighAnsi = mixInfo.FontFamily };
+                double fonSize = Convert.ToDouble(mixInfo.FontSize);
+                run.RunProperties.FontSize = new FontSize
+                {
+                    Val = (fonSize * 2).ToString()
+                };
             }
         }
 

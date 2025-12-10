@@ -11,7 +11,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Windows;
 using Task = System.Threading.Tasks.Task;
 using Word = Microsoft.Office.Interop.Word;
 
@@ -30,18 +29,20 @@ namespace Desktop.ViewModels
 
         [ObservableProperty] private string sourceFile = string.Empty;
         [ObservableProperty] private string destinationFile = string.Empty;
+        [ObservableProperty] private string outputFolder = string.Empty;
+
         [ObservableProperty] private ObservableCollection<Question> questions = [];
 
         [ObservableProperty] private ObservableCollection<ExamType> examTypes = [];
         [ObservableProperty] private ExamType selectedExamType = ExamType.ezMix;
 
-        [ObservableProperty] private string outputFolder = string.Empty;
         [ObservableProperty] private bool isEnableMix = false;
         [ObservableProperty] private bool isOK = false;
+
         [ObservableProperty] private MixInfo mixInfo = new();
         [ObservableProperty] private string examCodes = string.Empty;
         [ObservableProperty] private string fontFamily = "Times New Roman";
-        [ObservableProperty] private double fontSize = 12;
+        [ObservableProperty] private string fontSize = "12";
         [ObservableProperty] private string processContent = string.Empty;
 
         [ObservableProperty] private string inputText = string.Empty;
@@ -58,9 +59,9 @@ namespace Desktop.ViewModels
             "Verdana",
             "Georgia"
         ];
-        public ObservableCollection<double> FontSizes { get; } =
+        public ObservableCollection<string> FontSizes { get; } =
         [
-            10, 11, 12, 13, 14, 16, 18, 20
+            "10", "11", "12", "13", "14", "16", "18", "20"
         ];
 
         public MixViewModel(IOpenXMLService openXMLService, IInteropWordService interopWordService, IGeminiService geminiService)
@@ -237,7 +238,7 @@ namespace Desktop.ViewModels
                 var range = document.Range();
                 range.Font.Color = WdColor.wdColorBlack;
                 range.Font.Name = MixInfo.FontFamily;
-                range.Font.Size = (float)MixInfo.FontSize;
+                range.Font.Size = Convert.ToSingle(MixInfo.FontSize);
 
                 var removeStarts = new[]
                 {
@@ -248,7 +249,7 @@ namespace Desktop.ViewModels
                     "i.", "ii.", "iii.", "iv.",
                     "<g0>", "<g1>", "<g2>", "<g3>",
                     "<#g0>", "<#g1>", "<#g2>", "<#g3>",
-                    "---HẾT"
+                    "---HẾT", "---", "- Thí sinh không", "- Giám thị không"
                 };
 
                 var questionPatterns = new[]
@@ -404,7 +405,7 @@ namespace Desktop.ViewModels
         }
 
         [RelayCommand]
-        private void Mix()
+        private async Task Mix()
         {
             if (!File.Exists(DestinationFile))
                 return;
@@ -428,7 +429,9 @@ namespace Desktop.ViewModels
                 }
 
                 MixInfo.Versions = versions;
-                _openXMLService.GenerateShuffledExamsAsync(DestinationFile, OutputFolder, MixInfo);
+                MixInfo.FontFamily = FontFamily;
+                MixInfo.FontSize = FontSize;
+                await _openXMLService.GenerateShuffledExamsAsync(DestinationFile, OutputFolder, MixInfo);
 
                 MessageHelper.Success("Trộn đề hoàn tất!");
 
@@ -472,7 +475,7 @@ namespace Desktop.ViewModels
         {
             try
             {
-                var dialog = MessageHelper.Success("Bạn có chắc chắn muốn nạp lại cấu hình mặc định không?", "Xác nhận", System.Windows.MessageBoxImage.Question);
+                var dialog = MessageHelper.Question("Bạn có chắc chắn muốn nạp lại cấu hình mặc định không?", "Xác nhận", System.Windows.MessageBoxImage.Question);
                 if (dialog == System.Windows.MessageBoxResult.No)
                     return;
 

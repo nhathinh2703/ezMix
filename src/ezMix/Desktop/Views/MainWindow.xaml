@@ -40,7 +40,7 @@
                 <!-- Focus -->
                 <Trigger Property="IsKeyboardFocused" Value="True">
                     <Setter Property="Background" Value="#FFAA44"/>
-                    <Setter Property="FontWeight" Value="Bold"/>
+                    <!--<Setter Property="FontWeight" Value="Bold"/>-->
                 </Trigger>
                 <!-- Selected -->
                 <!--<DataTrigger Binding="{Binding IsSelected}" Value="True">
@@ -126,13 +126,24 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <Button Grid.Column="0" Content="☰" Background="Transparent" Foreground="#FF9933" BorderThickness="0" FontSize="16" Padding="10" Command="{Binding ToggleMenuCommand}"/>
-                    <TextBlock Grid.Column="1" Text="{Binding CurrentTitle}"
-                               Foreground="#FF9933" FontWeight="Bold" FontSize="14"
-                               VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    <Button Grid.Column="0" Content="☰" Background="Transparent" Foreground="#FF9933" 
+                            BorderThickness="0" FontSize="16" Margin="5,0,5,0" FontWeight="Bold"
+                            Command="{Binding ToggleMenuCommand}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+
+                    <Border Grid.Column="1" Background="#FF9933" CornerRadius="10" Margin="5" Padding="6">
+                        <TextBlock Text="{Binding CurrentTitle}"
+                                   Foreground="White" 
+                                   FontSize="15"
+                                   Padding="3"
+                                   VerticalAlignment="Center" 
+                                   HorizontalAlignment="Center"/>
+                    </Border>
+
                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
-                        <TextBlock Text="Cùng nhau học hỏi, cùng nhau phát triển" Margin="10" FontSize="14"
-                                    Foreground="#FF9933" FontStyle="Italic" FontWeight="SemiBold"/>
+                        <TextBlock Text="Cùng nhau học hỏi, cùng nhau phát triển" Margin="10" FontSize="15"
+                                    Foreground="#FF9933" FontStyle="Italic"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -145,16 +156,16 @@
             <!-- Footer -->
             <Border Grid.Row="2" Background="#FFF5EB" Padding="8">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" >
-                    <TextBlock Text="👤" Margin="0,0,5,0" Foreground="#FF9933"/>
-                    <TextBlock Foreground="#FF9933">
+                    <TextBlock Text="👤" Margin="0,0,5,0" Foreground="#FF9933" FontSize="16"/>
+                    <TextBlock Foreground="#FF9933" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Run Text="Phát triển: "/>
-                        <Run Text="Hà Quốc Bảo Nguyên" FontWeight="Bold"/>
+                        <Run Text="Trường THCS và THPT Bác Ái" FontWeight="Bold"/>
                     </TextBlock>
 
                     <TextBlock Text="   "/>
 
-                    <TextBlock Text="💬" Margin="15,0,5,0" Foreground="#FF9933"/>
-                    <TextBlock Foreground="#FF9933">
+                    <TextBlock Text="💬" Margin="15,0,5,0" Foreground="#FF9933" FontSize="16"/>
+                    <TextBlock Foreground="#FF9933" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Run Text="Nhóm hỗ trợ: "/>
                         <Run Text="Zalo" FontWeight="Bold" TextDecorations="Underline" Cursor="Hand">
                             <i:Interaction.Triggers>

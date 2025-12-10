@@ -13,7 +13,7 @@ namespace Desktop.Helpers
                 Title = title,
                 Filter = filter,
                 CheckFileExists = true,
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                //InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
             };
 
             return dialog.ShowDialog() == true ? dialog.FileName : null;

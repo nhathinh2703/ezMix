@@ -10,6 +10,12 @@ namespace Desktop.Helpers
             return MessageBox.Show(message, title, MessageBoxButton.OK, icon);
         }
 
+        public static MessageBoxResult Question(string message, string title = "Xác nhận", MessageBoxImage icon = MessageBoxImage.Question)
+        {
+            return MessageBox.Show(message, title, MessageBoxButton.YesNo, icon);
+        }
+
+
         public static MessageBoxResult Error(string message, string title = "Lỗi", MessageBoxImage icon = MessageBoxImage.Error)
         {
             return MessageBox.Show("Thất bại!\nLỗi: " + message, title, MessageBoxButton.OK, icon);

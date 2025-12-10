@@ -3,7 +3,7 @@
 # === Cấu hình mặc định ===
 $projectDir  = "$PSScriptRoot\..\src\ezMix\Desktop"
 $outputDir   = "$PSScriptRoot\..\output"
-$framework   = "net8.0-windows"
+$framework   = "net10.0-windows7.0"
 $publishDir  = "$projectDir\bin\Release\$framework\publish"
 
 # === Kiểm tra publish directory ===
