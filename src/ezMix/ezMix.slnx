@@ -1,6 +1,4 @@
 <Solution>
   <Project Path="Desktop/Desktop.csproj" />
   <Project Path="MathType/MathType.csproj" Id="4caabce4-084d-4ff8-9380-2a3ae5a2903c" />
-  <Project Path="Shared/Shared.csproj" Id="ba5dc50a-6ef3-48c5-9717-8093edc20441" />
-  <Project Path="Updater/Updater.csproj" Id="ab4d8af9-dd7f-4cc0-9dbd-3705228f30c0" />
 </Solution>

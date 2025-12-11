@@ -3,8 +3,6 @@ using Desktop.Services.Interfaces;
 using Desktop.ViewModels;
 using Desktop.Views;
 using Microsoft.Extensions.DependencyInjection;
-using Shared.Interfaces;
-using Shared.Services;
 
 namespace Desktop.DependencyInjection
 {
@@ -20,8 +18,6 @@ namespace Desktop.DependencyInjection
             services.AddTransient<IGeminiService, GeminiService>();
 
             services.AddHttpClient();
-            services.AddScoped<IVersionChecker, VersionChecker>();
-            services.AddScoped<IUpdateService, UpdateService>();
 
             // Đăng ký Views
             services.AddSingleton<HomeView>();
