@@ -70,7 +70,7 @@ namespace Desktop.ViewModels
         [RelayCommand]
         private static void OpenZalo()
         {
-            string url = Constants.GROUP_ZALO;
+            string url = Constants.ZaloGroup;
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
     }

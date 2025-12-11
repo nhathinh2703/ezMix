@@ -22,22 +22,20 @@ namespace Desktop.ViewModels
         private readonly IInteropWordService _interopWordService;
         private readonly IGeminiService _geminiService;
 
-        [ObservableProperty] private string geminiAPIKey = Constants.GeminiApiKey;
-        [ObservableProperty] private string geminiModel = Constants.GeminiModel;
-        [ObservableProperty] private string promtAnalyzeExam = string.Empty;
-        [ObservableProperty] private string promptJson = string.Empty;
+        private readonly string PromptFolder = Path.Combine(Directory.GetCurrentDirectory(), "Prompts");
+        private readonly string PromtAnalyzeExamFile = Path.Combine(Directory.GetCurrentDirectory(), "Prompts", "PromptAnalyzeExam.txt");
+
+        [ObservableProperty] private ProgressOverlay progressOverlay = new();
+
+        [ObservableProperty] private string promptAnalyzeExam = string.Empty;
 
         [ObservableProperty] private string sourceFile = string.Empty;
         [ObservableProperty] private string destinationFile = string.Empty;
         [ObservableProperty] private string outputFolder = string.Empty;
 
         [ObservableProperty] private ObservableCollection<Question> questions = [];
-
         [ObservableProperty] private ObservableCollection<ExamType> examTypes = [];
         [ObservableProperty] private ExamType selectedExamType = ExamType.ezMix;
-
-        [ObservableProperty] private bool isEnableMix = false;
-        [ObservableProperty] private bool isOK = false;
 
         [ObservableProperty] private MixInfo mixInfo = new();
         [ObservableProperty] private string examCodes = string.Empty;
@@ -47,7 +45,9 @@ namespace Desktop.ViewModels
 
         [ObservableProperty] private string inputText = string.Empty;
         [ObservableProperty] private string resultText = string.Empty;
-        public Dictionary<string, string> Prompts { get; set; } = new Dictionary<string, string>();
+
+        [ObservableProperty] private bool isEnableMix = false;
+        [ObservableProperty] private bool isOK = false;
 
         public ObservableCollection<string> FontFamilies { get; } =
         [
@@ -75,21 +75,20 @@ namespace Desktop.ViewModels
 
             FontFamily = MixInfo.FontFamily;
             FontSize = MixInfo.FontSize;
-            GeminiAPIKey = Constants.GeminiApiKey;
 
-            // Load từ file JSON
-            Prompts = JsonHelper.LoadFromJson<Dictionary<string, string>>(Constants.ConfigFile);
-            if (Prompts == null || Prompts.Count == 0)
+            Task.Run(async () =>
             {
-                Prompts = new Dictionary<string, string>
+                if (!Directory.Exists(PromptFolder))
+                    Directory.CreateDirectory(PromptFolder);
+
+                if (!File.Exists(PromtAnalyzeExamFile))
                 {
-                    ["PromptAnalyzeExam"] = Constants.PromptAnalyzeExam,
-                    ["PromptOcrMathToLatex"] = Constants.PromptOcrMathToLatex,
-                    ["PromptOcrMathToMathML"] = Constants.PromptOcrMathToMathML
-                };
-                JsonHelper.SaveToJson(Constants.ConfigFile, Prompts);
-            }
-            LoadPromptJson();
+                    PromptAnalyzeExam = Constants.PromptAnalyzeExam;
+                    await File.WriteAllTextAsync(PromtAnalyzeExamFile, Constants.PromptAnalyzeExam);
+                }
+                else
+                    PromptAnalyzeExam = await File.ReadAllTextAsync(PromtAnalyzeExamFile);
+            });
         }
 
         [RelayCommand]
@@ -100,6 +99,11 @@ namespace Desktop.ViewModels
                 var sourcePath = FileHelper.BrowseFile();
                 if (string.IsNullOrEmpty(sourcePath))
                     return;
+
+                // Hiện overlay
+                ProgressOverlay.IsVisible = true;
+                ProgressOverlay.IsIndeterminate = true;
+                ProgressOverlay.StatusText = "Đang chuẩn hóa đề kiểm tra...";
 
                 ResetLog();
                 AddLog("---CHỨC NĂNG CHUẨN HÓA---");
@@ -125,7 +129,7 @@ namespace Desktop.ViewModels
                 AddLog($"- Tạo tệp đích: {DestinationFile}");
 
                 AddLog("Bắt đầu chuẩn hóa nội dung...");
-                await ProcessDocumentAsync(DestinationFile, SelectedExamType);
+                await ProcessDocumentAsync(DestinationFile, SelectedExamType, MixInfo.IsShowWordWhenAnalyze);
 
                 AddLog("- Phân tích câu hỏi từ tệp đã chuẩn hóa...");
                 var result = await _openXMLService.ParseDocxQuestionsAsync(DestinationFile);
@@ -139,11 +143,23 @@ namespace Desktop.ViewModels
 
                 MessageHelper.Success($"Chuẩn hóa theo ({SelectedExamType}) thành công!");
                 AddLog("- Chuẩn hóa hoàn tất thành công!");
+
+                // Cập nhật overlay khi xong
+                ProgressOverlay.IsIndeterminate = false;
+                ProgressOverlay.ProgressValue = 100;
+                ProgressOverlay.StatusText = "Chuẩn hóa hoàn tất ✅";
             }
             catch (Exception ex)
             {
+                ProgressOverlay.StatusText = $"❌ Lỗi khi chuẩn hóa: {ex.Message}";
                 AddLog($"- ERROR: Lỗi khi chuẩn hóa: {ex.Message}");
                 MessageHelper.Error(ex);
+            }
+            finally
+            {
+                // Ẩn overlay sau một chút
+                await Task.Delay(1000);
+                ProgressOverlay.IsVisible = false;
             }
         }
 
@@ -155,6 +171,11 @@ namespace Desktop.ViewModels
                 var filePath = FileHelper.BrowseFile();
                 if (string.IsNullOrEmpty(filePath))
                     return;
+
+                // Hiện overlay
+                ProgressOverlay.IsVisible = true;
+                ProgressOverlay.IsIndeterminate = true;
+                ProgressOverlay.StatusText = "Đang nhận dạng câu hỏi từ file...";
 
                 ResetLog();
                 AddLog("---CHỨC NĂNG NHẬN DẠNG---");
@@ -172,20 +193,32 @@ namespace Desktop.ViewModels
 
                 IsEnableMix = File.Exists(SourceFile) && IsOK;
                 AddLog(IsEnableMix ? "- Tệp hợp lệ, có thể trộn đề." : "- Tệp không hợp lệ, không thể trộn đề.");
+
+                // Cập nhật overlay khi xong
+                ProgressOverlay.IsIndeterminate = false;
+                ProgressOverlay.ProgressValue = 100;
+                ProgressOverlay.StatusText = "Nhận dạng hoàn tất ✅";
             }
             catch (Exception ex)
             {
+                ProgressOverlay.StatusText = $"❌ Lỗi khi nhận dạng: {ex.Message}";
                 AddLog($"- ERROR: Lỗi khi nhận dạng: {ex.Message}");
                 MessageHelper.Error(ex);
             }
+            finally
+            {
+                // Ẩn overlay sau một chút
+                await Task.Delay(1000);
+                ProgressOverlay.IsVisible = false;
+            }
         }
 
-        private async Task ProcessDocumentAsync(string filePath, ExamType typeExam)
+        private async Task ProcessDocumentAsync(string filePath, ExamType typeExam, bool isShowWordWhenAnalyze)
         {
             _Document? document = null;
             try
             {
-                document = await _interopWordService.OpenDocumentAsync(filePath, visible: true);
+                document = await _interopWordService.OpenDocumentAsync(filePath, visible: isShowWordWhenAnalyze);
                 document.Activate();
 
                 await _interopWordService.FormatDocumentAsync(document);
@@ -412,6 +445,11 @@ namespace Desktop.ViewModels
 
             try
             {
+                // Hiện overlay
+                ProgressOverlay.IsVisible = true;
+                ProgressOverlay.IsIndeterminate = true;
+                ProgressOverlay.StatusText = "Đang trộn đề...";
+
                 OutputFolder = Path.Combine(Path.GetDirectoryName(DestinationFile)!, "ezMix");
                 // Xóa thư mục nếu đã tồn tại
                 if (Directory.Exists(OutputFolder))
@@ -424,6 +462,7 @@ namespace Desktop.ViewModels
                 var versions = ExamCodes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (versions.Length == 0)
                 {
+                    ProgressOverlay.IsVisible = false;
                     MessageHelper.Error("Chưa tạo danh sách mã đề!");
                     return;
                 }
@@ -431,7 +470,12 @@ namespace Desktop.ViewModels
                 MixInfo.Versions = versions;
                 MixInfo.FontFamily = FontFamily;
                 MixInfo.FontSize = FontSize;
+
                 await _openXMLService.GenerateShuffledExamsAsync(DestinationFile, OutputFolder, MixInfo);
+
+                ProgressOverlay.StatusText = "Trộn đề hoàn tất ✅";
+                ProgressOverlay.IsIndeterminate = false;
+                ProgressOverlay.ProgressValue = 100;
 
                 MessageHelper.Success("Trộn đề hoàn tất!");
 
@@ -446,7 +490,14 @@ namespace Desktop.ViewModels
             }
             catch (Exception ex)
             {
+                ProgressOverlay.StatusText = $"❌ Có lỗi xảy ra: {ex.Message}";
                 MessageHelper.Error(ex);
+            }
+            finally
+            {
+                // Ẩn overlay sau một chút
+                await Task.Delay(1000);
+                ProgressOverlay.IsVisible = false;
             }
         }
 
@@ -480,8 +531,10 @@ namespace Desktop.ViewModels
                     return;
 
                 var defaultInfo = new MixInfo();
-                FontFamily = MixInfo.FontFamily = defaultInfo.FontFamily;
-                FontSize = MixInfo.FontSize = defaultInfo.FontSize;
+                MixInfo = defaultInfo;
+                FontFamily  = defaultInfo.FontFamily;
+                FontSize = defaultInfo.FontSize;
+
                 XmlHelper.SaveToXml(Constants.XmlFilePath, MixInfo);
                 MessageHelper.Success("Đã nạp lại cấu hình định");
 
@@ -536,48 +589,59 @@ namespace Desktop.ViewModels
 
             try
             {
+                ProgressOverlay.IsVisible = true;
+                ProgressOverlay.IsIndeterminate = true;
+                ProgressOverlay.StatusText = "Đang phân tích đề bằng Gemini...";
+
                 ResultText = "Đang phân tích...";
-                string promptAnalyzeExam = string.Format(Prompts["PromtAnalyzeExam"], MixInfo.Subject, MixInfo.Grade);
+                string promptAnalyzeExam = string.Format(PromptAnalyzeExam, MixInfo.Subject, MixInfo.Grade);
                 string prompt = $"{promptAnalyzeExam}\n\nĐỀ KIỂM TRA:\n{InputText}";
-                ResultText = await _geminiService.CallGeminiAsync(GeminiModel, GeminiAPIKey, prompt);
+
+                // Gọi API
+                ResultText = await _geminiService.CallGeminiAsync(MixInfo.GeminiModel, MixInfo.GeminiApiKey, prompt);
+
+                ProgressOverlay.IsVisible = false;
             }
             catch (Exception ex)
             {
-                // Hiển thị thông báo lỗi cho người dùng
+                ProgressOverlay.IsVisible = false;
                 ResultText = $"❌ Có lỗi xảy ra khi kiểm tra chính tả: {ex.Message}";
-                // Nếu muốn log chi tiết hơn:
-                // Debug.WriteLine(ex.ToString());
             }
         }
 
         [RelayCommand]
-        private void ResetPrompt()
-        {
-            Prompts = new Dictionary<string, string>
-            {
-                ["PromtAnalyzeExam"] = Constants.PromptAnalyzeExam,
-                ["PromptOcrMathToLatex"] = Constants.PromptOcrMathToLatex,
-                ["PromptOcrMathToMathML"] = Constants.PromptOcrMathToMathML
-            };
-
-            JsonHelper.SaveToJson(Constants.ConfigFile, Prompts);
-
-            LoadPromptJson();
-
-            MessageHelper.Success("✅ Prompt đã được reset về mặc định");
-        }
-
-        [RelayCommand]
-        private void SavePrompt()
+        private async Task ResetPrompt()
         {
             try
             {
-                File.WriteAllText(Constants.ConfigFile, PromptJson);
-                MessageHelper.Success("💾 PromptJson đã được lưu thành công");
+                PromptAnalyzeExam = Constants.PromptAnalyzeExam;
+
+                if (!Directory.Exists(PromptFolder))
+                    Directory.CreateDirectory(PromptFolder);
+
+                await File.WriteAllTextAsync(PromtAnalyzeExamFile, PromptAnalyzeExam);
+                MessageHelper.Success("✅ PromtAnalyzeExam được reset về mặc định");
             }
             catch (Exception ex)
             {
-                MessageHelper.Error($"❌ Lỗi khi lưu PromptJson: {ex.Message}");
+                MessageHelper.Error($"❌ Lỗi khi reset PromtAnalyzeExam: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private async Task SavePrompt()
+        {
+            try
+            {
+                if (!Directory.Exists(PromptFolder))
+                    Directory.CreateDirectory(PromptFolder);
+
+                await File.WriteAllTextAsync(PromtAnalyzeExamFile, PromptAnalyzeExam ?? string.Empty); 
+                MessageHelper.Success("💾 PromtAnalyzeExam đã được lưu thành công");
+            }
+            catch (Exception ex)
+            {
+                MessageHelper.Error($"❌ Lỗi khi lưu PromtAnalyzeExam: {ex.Message}");
             }
         }
 
@@ -586,7 +650,7 @@ namespace Desktop.ViewModels
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(GeminiModel) || string.IsNullOrWhiteSpace(GeminiAPIKey))
+                if (string.IsNullOrWhiteSpace(MixInfo.GeminiModel) || string.IsNullOrWhiteSpace(MixInfo.GeminiApiKey))
                 {
                     InputText += "\n⚠️ Chưa nhập Gemini Model hoặc Gemini API Key, không thể chạy.";
                     return;
@@ -595,17 +659,32 @@ namespace Desktop.ViewModels
                 var path = FileHelper.BrowsePdf();
                 if (!string.IsNullOrEmpty(path))
                 {
+                    // Hiện overlay
+                    ProgressOverlay.IsVisible = true;
+                    ProgressOverlay.IsIndeterminate = true;
+                    ProgressOverlay.StatusText = "Đang trích xuất văn bản từ PDF...";
+
                     InputText = $"Đã chọn: {path}\n\n";
                     InputText += "Đang trích xuất văn bản từ PDF...\n";
 
-                    var result = await ExtractTextByGeminiAsync(GeminiModel, GeminiAPIKey, path);
+                    var result = await ExtractTextByGeminiAsync(MixInfo.GeminiModel, MixInfo.GeminiApiKey, path);
                     InputText += result;
+
+                    // Cập nhật overlay khi xong
+                    ProgressOverlay.IsIndeterminate = false;
+                    ProgressOverlay.ProgressValue = 100;
+                    ProgressOverlay.StatusText = "Trích xuất hoàn tất ✅";
                 }
             }
             catch (Exception ex)
             {
-                // Ghi log hoặc hiển thị thông báo lỗi
+                ProgressOverlay.StatusText = $"❌ Lỗi khi xử lý PDF: {ex.Message}";
                 InputText += $"\nLỗi khi xử lý PDF: {ex.Message}";
+            }
+            finally
+            {
+                await Task.Delay(1000);
+                ProgressOverlay.IsVisible = false;
             }
         }
 
@@ -614,7 +693,7 @@ namespace Desktop.ViewModels
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(GeminiModel) || string.IsNullOrWhiteSpace(GeminiAPIKey))
+                if (string.IsNullOrWhiteSpace(MixInfo.GeminiModel) || string.IsNullOrWhiteSpace(MixInfo.GeminiApiKey))
                 {
                     InputText += "\n⚠️ Chưa nhập Gemini Model hoặc Gemini API Key, không thể chạy.";
                     return;
@@ -622,18 +701,34 @@ namespace Desktop.ViewModels
 
                 var path = FileHelper.BrowseImage();
                 if (!string.IsNullOrEmpty(path))
-                {
+                {        
+                    // Hiện overlay
+                    ProgressOverlay.IsVisible = true;
+                    ProgressOverlay.IsIndeterminate = true;
+                    ProgressOverlay.StatusText = "Đang trích xuất văn bản từ ảnh...";
+
                     InputText = $"Đã chọn:\n{path}\n\n";
                     InputText += "Đang trích xuất văn bản từ ảnh...\n";
 
-                    var result = await ExtractTextByGeminiAsync(GeminiModel, GeminiAPIKey, path);
+                    var result = await ExtractTextByGeminiAsync(MixInfo.GeminiModel, MixInfo.GeminiApiKey, path);
                     InputText += result;
+
+                    // Cập nhật overlay khi xong
+                    ProgressOverlay.IsIndeterminate = false;
+                    ProgressOverlay.ProgressValue = 100;
+                    ProgressOverlay.StatusText = "Trích xuất hoàn tất ✅";
                 }
             }
             catch (Exception ex)
             {
-                // Ghi log hoặc hiển thị thông báo lỗi
+                ProgressOverlay.StatusText = $"❌ Lỗi khi xử lý ảnh: {ex.Message}";
                 InputText += $"\nLỗi khi xử lý ảnh: {ex.Message}";
+            }
+            finally
+            {
+                // Ẩn overlay sau một chút
+                await Task.Delay(1000);
+                ProgressOverlay.IsVisible = false;
             }
         }
 
@@ -676,15 +771,6 @@ namespace Desktop.ViewModels
                 .GetString();
 
             return text!;
-        }
-
-        private void LoadPromptJson()
-        {
-            PromptJson = JsonSerializer.Serialize(Prompts, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-            });
         }
 
         private async Task<string> ExtractTextByGeminiAsync(string model, string apiKey, string path)

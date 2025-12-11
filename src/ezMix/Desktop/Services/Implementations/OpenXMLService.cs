@@ -114,15 +114,20 @@ namespace Desktop.Services.Implementations
                             a.Version = version;
                             allAnswers.Add(a);
                         }
-                        await AddFooterAsync(mixDoc, version);                              
-                        await AddEndNotesAsync(mixDoc);
-                        await FormatAllParagraphsAsync(mixDoc, mixInfo);
+                        await AddFooterAsync(mixDoc, version);              // Thêm Mã đề - Số trang                      
+                        await AddEndNotesAsync(mixDoc);                     // Thêm phần cuối đề: "- Giám thị không giải thích ..."
+                        await FormatAllParagraphsAsync(mixDoc, mixInfo);    // Định dạng lại đề: cỡ chữ, phông chữ, cách dòng trên đề
+
+                        // Xuất word đáp án
                         await AppendGuideAsync(answerDoc, answers, mixInfo, version);
                         await MoveEssayTableToEndAsync(answerDoc);
+                        await FormatAllParagraphsAsync(answerDoc, mixInfo);    // Định dạng lại đáp án: cỡ chữ, phông chữ, cách dòng trên đáp án
+
+                        // Lưu
                         mixDoc.MainDocumentPart!.Document.Save();
                         answerDoc.MainDocumentPart!.Document.Save();
                     }
-                    await _interopWordService.UpdateFieldsAsync(mixFile);
+                    await _interopWordService.UpdateFieldsAsync(mixFile);     // Cập nhật số trang trong đề
                 }
                 _excelAnswerExporter.ExportExcelAnswers($"{outputFolder}\\{Constants.EXCEL_ANSWER_FILE}", allAnswers);
             });
@@ -174,13 +179,14 @@ namespace Desktop.Services.Implementations
                 body!.RemoveAllChildren();
                 int questionNumber = 0;
                 int index = 0;
+                string[] points = [mixInfo!.PointMultipleChoice, mixInfo.PointTrueFalse, mixInfo.PointShortAnswer, mixInfo.PointEssay];    // Thêm điểm trong title
 
                 foreach (var group in grouped.OrderBy(g => g.Key).Where(g => g.Value.Any()))
                 {
                     int localQuestion = 0;
                     index++;
 
-                    string title = CreateSectionTitle(group.Key, index, group.Value.Count);
+                    string title = CreateSectionTitle(group.Key, index, group.Value.Count, points);
                     if (!string.IsNullOrEmpty(title))
                     {
                         var heading = new Paragraph();
@@ -603,35 +609,7 @@ namespace Desktop.Services.Implementations
                     // Thêm nhãn mới (in đậm)
                     var labelRun = new Run(new Text($"{newLabel} ") { Space = SpaceProcessingModeValues.Preserve });
                     labelRun.RunProperties = new RunProperties(new Bold());
-                    newFirstPara.Append(labelRun);
-
-                    //bool labelProcessed = false;
-
-                    //foreach (var node in firstPara!.Elements())
-                    //{
-                    //    if (!labelProcessed && node is Run run)
-                    //    {
-                    //        string runText = run.InnerText.TrimStart();
-                    //        if (runText.StartsWith(item.Label))
-                    //        {
-                    //            string remaining = runText.Substring(item.Label.Length).TrimStart();
-
-                    //            if (!string.IsNullOrEmpty(remaining))
-                    //            {
-                    //                // Loại bỏ dấu cách thừa đầu dòng
-                    //                remaining = remaining.TrimStart();
-
-                    //                var newRun = new Run(new Text(remaining) { Space = SpaceProcessingModeValues.Preserve });
-                    //                newFirstPara.Append(newRun);
-                    //            }
-                    //            labelProcessed = true;
-                    //            continue;
-                    //        }
-                    //    }
-
-                    //    // Clone mọi thứ khác, giữ nguyên Equation, hình ảnh...
-                    //    newFirstPara.Append(node.CloneNode(true));
-                    //}
+                    newFirstPara.Append(labelRun);                          
 
                     // Gộp toàn bộ nội dung
                     string fullText = string.Concat(firstPara!.Descendants<Text>().Select(t => t.Text)).Trim();
@@ -1266,6 +1244,7 @@ namespace Desktop.Services.Implementations
                         { "[KYTHI]", mixInfo.TestPeriod ?? string.Empty },
                         { "[NAMHOC]", mixInfo.SchoolYear ?? string.Empty },
                         { "[MONTHI]", mixInfo.Subject ?? string.Empty },
+                        { "[KHOILOP]", mixInfo.Grade ?? string.Empty },
                         { "[DONVICAPTREN]", mixInfo.SuperiorUnit ?? string.Empty },
                         { "[DONVI]", mixInfo.Unit ?? string.Empty },
                         { "[MaDe]", code },
@@ -1275,10 +1254,12 @@ namespace Desktop.Services.Implementations
                     var grouped = answers.GroupBy(a => a.Type).OrderBy(g => g.Key).ToList();
 
                     int index = 0;
+                    string[] points = [mixInfo!.PointMultipleChoice, mixInfo.PointTrueFalse, mixInfo.PointShortAnswer, mixInfo.PointEssay];    // Thêm điểm trong title
+
                     foreach (var group in grouped)
                     {
                         index++;
-                        string title = CreateSectionTitle(group.Key, index, group.Count());
+                        string title = CreateSectionTitle(group.Key, index, group.Count(), points);
 
                         if (!string.IsNullOrEmpty(title))
                         {
@@ -1565,16 +1546,30 @@ namespace Desktop.Services.Implementations
             );
         }
 
-        private string CreateSectionTitle(QuestionType type, int index, int end)
+        private string CreateSectionTitle(QuestionType type, int index, int end, string[] points)
         {
-            return type switch
+            //return type switch
+            //{
+            //    QuestionType.MultipleChoice => string.Format(Constants.TITLES[0], Constants.ROMANS[index - 1], end),
+            //    QuestionType.TrueFalse => string.Format(Constants.TITLES[1], Constants.ROMANS[index - 1], end),
+            //    QuestionType.ShortAnswer => string.Format(Constants.TITLES[2], Constants.ROMANS[index - 1], end),
+            //    QuestionType.Essay => string.Format(Constants.TITLES[3], Constants.ROMANS[index - 1], end),
+            //    _ => string.Empty
+            //};
+
+            int typeIndex = (int)type;
+            string point = points[typeIndex];
+
+            // Lấy template gốc (không có {2})
+            string baseTitle = string.Format(Constants.TITLES[typeIndex], Constants.ROMANS[index - 1], end);
+
+            // Nếu có điểm thì nối thêm
+            if (!string.IsNullOrWhiteSpace(point))
             {
-                QuestionType.MultipleChoice => string.Format(Constants.TITLES[0], Constants.ROMANS[index - 1], end),
-                QuestionType.TrueFalse => string.Format(Constants.TITLES[1], Constants.ROMANS[index - 1], end),
-                QuestionType.ShortAnswer => string.Format(Constants.TITLES[2], Constants.ROMANS[index - 1], end),
-                QuestionType.Essay => string.Format(Constants.TITLES[3], Constants.ROMANS[index - 1], end),
-                _ => string.Empty
-            };
+                baseTitle += $" ({point} điểm)";
+            }
+
+            return baseTitle;
         }
 
         public string? ExtractPointFromText(string text) => Regex.Match(text, @"\((\d+[,.]?\d*)\s+điểm\)").Groups[1].Value;
