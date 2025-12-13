@@ -605,7 +605,6 @@ namespace Desktop.Services.Implementations
             }
         }
 
-
         public async Task ClearTabStopsAsync(Word.Paragraph paragraph)
         {
             await Task.Run(() =>
@@ -631,9 +630,9 @@ namespace Desktop.Services.Implementations
         {
             return await Task.Run(() =>
             {
-                Word.InlineShapes? shapes = document?.InlineShapes;
                 try
                 {
+                    Word.InlineShapes? shapes = document?.InlineShapes;
                     if (shapes != null && shapes.Count > 0)
                     {
                         var connect = new Connect();

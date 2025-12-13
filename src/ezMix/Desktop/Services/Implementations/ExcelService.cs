@@ -5,7 +5,7 @@ using Desktop.Services.Interfaces;
 
 namespace Desktop.Services.Implementations
 {
-    public class ExcelAnswerExporter : IExcelAnswerExporter
+    public class ExcelService : IExcelService
     {
         public void ExportExcelAnswers(string filePath, List<QuestionExport> answers)
         {

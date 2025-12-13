@@ -4,11 +4,11 @@ namespace Desktop.Models.Enums
 {
     public enum QuestionType
     {
-        [Description("Trắc nghiệm đơn")]
+        [Description("TN Nhiều lựa chọn")]
         MultipleChoice,
-        [Description("Đúng/sai")]
+        [Description("TN Đúng/sai")]
         TrueFalse,
-        [Description("Trả lời ngắn")]
+        [Description("TN Trả lời ngắn")]
         ShortAnswer,
         [Description("Tự luận")]
         Essay,

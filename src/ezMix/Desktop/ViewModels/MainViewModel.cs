@@ -15,8 +15,8 @@ namespace Desktop.ViewModels
 
         [ObservableProperty] private ObservableObject? currentViewModel;
         [ObservableProperty] private bool isMenuExpanded = true;
-        [ObservableProperty] public double menuWidth = 140;
-        [ObservableProperty] public string appVersion = string.Empty;
+        [ObservableProperty] private double menuWidth = 140;
+        [ObservableProperty] private string appVersion = string.Empty;
         [ObservableProperty] private string currentTitle = "Trang chủ";
 
         public MainViewModel(IServiceProvider serviceProvider)
@@ -38,12 +38,8 @@ namespace Desktop.ViewModels
                 //}
             };
 
-            var fullVersion = FileVersionInfo
-                .GetVersionInfo(Assembly.GetExecutingAssembly().Location)
-                .ProductVersion;
-            var shortVersion = fullVersion?.Split('+')[0];
-            AppVersion = $"v{shortVersion}";
-
+            var version = Assembly.GetExecutingAssembly().GetName().Version!;
+            AppVersion = $"{version.Major}.{version.Minor}.{version.Build}";
             CurrentViewModel = _serviceProvider?.GetService(typeof(HomeViewModel)) as ObservableObject;
         }
 
@@ -51,7 +47,7 @@ namespace Desktop.ViewModels
         private void ToggleMenu()
         {
             IsMenuExpanded = !IsMenuExpanded;
-            MenuWidth = IsMenuExpanded ? 130 : 40;
+            MenuWidth = IsMenuExpanded ? 130 : 55;
         }
 
         [RelayCommand]

@@ -12,10 +12,11 @@ namespace Desktop.DependencyInjection
         {
             // Đăng ký Services
             services.AddSingleton<IViewLocator, ViewLocator>();
-            services.AddTransient<IExcelAnswerExporter, ExcelAnswerExporter>();
+            services.AddTransient<IExcelService, ExcelService>();
             services.AddTransient<IOpenXMLService, OpenXMLService>();
             services.AddTransient<IInteropWordService, InteropWordService>();
             services.AddTransient<IGeminiService, GeminiService>();
+            services.AddSingleton<IUpdateCheckService, UpdateCheckService>();
 
             services.AddHttpClient();
 

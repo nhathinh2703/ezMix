@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Desktop.Services.Interfaces
 {
-    public interface IExcelAnswerExporter
+    public interface IExcelService
     {
         public void ExportExcelAnswers(string filePath, List<QuestionExport> answers);
     }

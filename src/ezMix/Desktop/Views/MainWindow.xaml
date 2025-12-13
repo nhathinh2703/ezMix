@@ -92,10 +92,11 @@
                     <DataTemplate DataType="{x:Type models:MenuItem}">
                         <Button Command="{Binding DataContext.ChangeViewCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                 CommandParameter="{Binding}"
+                                ToolTip="{Binding Title}"
                                 Style="{StaticResource SidebarMenuButton}">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <!-- Icon -->
-                                <TextBlock Text="{Binding Icon}" FontSize="20" Width="28" TextAlignment="Center" Padding="5"/>
+                                <TextBlock Text="{Binding Icon}" FontSize="20" Width="28" TextAlignment="Center" Padding="5" Margin="10,0,0,0"/>
                                 <!-- Title -->
                                 <TextBlock Text="{Binding Title}" FontSize="15" VerticalAlignment="Center" Padding="5" Margin="5,0"
                                            Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibilityConverter}}"/>

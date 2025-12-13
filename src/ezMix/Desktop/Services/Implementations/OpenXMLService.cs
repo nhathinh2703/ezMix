@@ -27,9 +27,9 @@ namespace Desktop.Services.Implementations
     public class OpenXMLService : IOpenXMLService
     {
         private readonly IInteropWordService _interopWordService;
-        private readonly IExcelAnswerExporter _excelAnswerExporter;
+        private readonly IExcelService _excelAnswerExporter;
 
-        public OpenXMLService(IInteropWordService interopWordService, IExcelAnswerExporter excelAnswerExporter) 
+        public OpenXMLService(IInteropWordService interopWordService, IExcelService excelAnswerExporter) 
         {
             _interopWordService = interopWordService;
             _excelAnswerExporter = excelAnswerExporter;

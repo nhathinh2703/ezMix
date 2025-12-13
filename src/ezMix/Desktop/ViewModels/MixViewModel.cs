@@ -297,7 +297,7 @@ namespace Desktop.ViewModels
                 {
                     try
                     {
-                        //paragraph.set_Style("Normal");  lênh này phá để test :D
+                        paragraph.set_Style("Normal");
                         string str = paragraph.Range.Text.Trim();
 
                         var rangeParagraph = paragraph.Range;

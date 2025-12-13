@@ -162,7 +162,7 @@
                            Margin="0,10"
                            FontSize="14"
                            Text="🧡 Tác giả luôn nỗ lực để mang lại trải nghiệm tốt nhất đến người dùng. Tuy nhiên, nếu có sai sót trong quá trình sử dụng, rất mong nhận được góp ý từ bạn qua nhóm hỗ trợ hoặc liên hệ trực tiếp tác giả. Sự đóng góp của bạn là động lực để ezMix ngày càng hoàn thiện và phục vụ tốt nhất cho cộng đồng." 
-                           Foreground="#FF9933" 
+                           Foreground="Gray" 
                            TextAlignment="Center"/>
             </StackPanel>
         </ScrollViewer>
